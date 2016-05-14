@@ -392,11 +392,11 @@ const u8 *osd_iris_man_string="P-IRIS     M";
 
 const u8 *iris_msg_osd[]=
 {
-	{"DC-IRIS1  A"}, //CALL 125
-	{"P-IRIS2   A"}, // SET 125
-	{"P-IRIS3   A"}, //130
-	{"P-IRIS2   M"}, // SET 125
-	{"P-IRIS3   M"}, //130
+	{"DC-IRIS1  A   "}, //CALL 125
+	{"P-IRIS2   A   "}, // SET 125
+	{"P-IRIS3   A   "}, //130
+	{"P-IRIS2   M   "}, // SET 125
+	{"P-IRIS3   M   "}, //130
 
 };
 
