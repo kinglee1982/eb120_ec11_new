@@ -548,7 +548,7 @@ void ec11_key_zoom_pin_init(void)
 
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13|GPIO_Pin_14|GPIO_Pin_15;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	
 	GPIO_Init(GPIOC, &GPIO_InitStructure);	
 
@@ -896,7 +896,7 @@ static void joystick_pin_init(void)
 }
 
 
-#define	JOYSTICK_UD_VOL_MID_MAX		1800
+#define	JOYSTICK_UD_VOL_MID_MAX		1900
 #define	JOYSTICK_UD_VOL_MID_MIN		1400
 
 #define	JOYSTICK_LR_VOL_MID_MAX		1800
@@ -931,16 +931,16 @@ u8 joystick_ud_speed = 0,joystick_ud_speed_pre;
 const u8 *joystick_msg[]=
 {
 {"     "},
-{"Left"},
+{"Left "},
 	{"Right"},
-	{"Up"},
-	{"Down"},
-	{"LU"},
-	{"LD"},
-	{"RU"},
-	{"RD"},
-	{"Left"},
-	{"Left"},
+	{"Up   "},
+	{"Down "},
+	{"LU   "},
+	{"LD   "},
+	{"RU   "},
+	{"RD   "},
+	{"OK   "},
+	{"Left "},
 };
 
 static void joystick_handle(void)
@@ -1388,26 +1388,8 @@ extern uchar keyboard_data_buffer[20];
 //return 0,failed; 1,success
 u8 wait_device_reply(u8* srcdata,u8 len,u32 w_100ms)
 {
-	u32 cnt;
-	cnt = w_100ms;
-	while(cnt--)
-	{
-		if (command_analysis()) 
-		{
-			u8 kk;
-
-			for(kk=2;kk<len-1;kk++)
-			{
-				if(srcdata[kk] != keyboard_data_buffer[kk])
-					return 0;
 
 
-			}
-			return 1;
-		}
-
-		rt_thread_delay (100);
-	}
 }
 
 
@@ -1518,13 +1500,18 @@ void key_analyze(u16 val)
 			{
 				//iris_mode = key_num_val-1;
 				if(iris_mode == 1)
-					iris_mode=0;
+				{
+
+					pelcod_set_pre_packet_send(127);
+
+					}
 				else
-					iris_mode = 1;
-				if(iris_mode==0)
-					pelcod_set_pre_packet_send(128);
-				else if(iris_mode==1)
+				{
 					pelcod_call_pre_packet_send(126);
+
+					}
+
+				rs485_get_data_from_slave();
 				//osd_line2_disp(1);
 				osd_line3_disp(1);
 				osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
@@ -1869,13 +1856,23 @@ void rt_key_thread_entry(void* parameter)
 		if(k==1)
 		{
 			pelcod_open_close_packet_send(0);
+			memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
+			strcat(osd_mid_str_buff,joystick_msg[9]);
+			osd_line1_disp(0);
 		}
 		else if(k==0x10)
 		{
 
 			pelcod_stop_packet_send();
+			memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
+			strcat(osd_mid_str_buff,joystick_msg[0]);
+			osd_line1_disp(0);
 
 		}
+
+
+		wait_device_reply(cmd_buff,7,OSD_MSG_DISP_MAX_SECOND);
+
 		
 		rt_thread_delay(20);
     }
@@ -2083,6 +2080,12 @@ const u8* focus_msg[]=
 {"Near "}
 };
 
+
+
+#define	OSD_DISP_DELAY		200
+
+
+
 #if 1
 void rt_ec11_focus_thread_entry(void* parameter)
 {
@@ -2104,6 +2107,7 @@ void rt_ec11_focus_thread_entry(void* parameter)
 				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 				strcat(osd_mid_str_buff,focus_msg[0]);
 				osd_line1_disp(0);
+				rs485_get_data_from_slave();
 
 				key_press_state_tmp = 0;
 				continue;
@@ -2141,12 +2145,15 @@ void rt_ec11_focus_thread_entry(void* parameter)
 
 					}
 				
-				rt_thread_delay(60);
+				rt_thread_delay(OSD_DISP_DELAY);
 				pelcod_zf_packet_send(PD_ZOOM_FOCUS_STOP,0);
 				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 				strcat(osd_mid_str_buff,focus_msg[0]);
 				
 				osd_line1_disp(0);
+
+				
+				rs485_get_data_from_slave();
 			}
 
 		}
@@ -2319,6 +2326,7 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 				osd_line1_disp(0);
 
 				
+				rs485_get_data_from_slave();
 				key_press_state_tmp = 0;
 				continue;
 			}
@@ -2354,13 +2362,15 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 					}
 
 				
-				rt_thread_delay(60);
+				rt_thread_delay(OSD_DISP_DELAY);
 				pelcod_zf_packet_send(PD_ZOOM_FOCUS_STOP,0);
 				
 				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 				strcat(osd_mid_str_buff,zoom_msg[0]);
 				osd_line1_disp(0);
 
+
+				rs485_get_data_from_slave();
 			}
 
 		}
@@ -2515,6 +2525,7 @@ const u8* iris_msg[]=
 };
 
 
+
 #if 1
 void rt_ec11_thread_entry(void* parameter)
 {
@@ -2537,6 +2548,9 @@ void rt_ec11_thread_entry(void* parameter)
 				strcat(osd_mid_str_buff,iris_msg[0]);
 				
 				osd_line1_disp(0);
+
+				
+				rs485_get_data_from_slave();
 				key_press_state_tmp = 0;
 				continue;
 			}
@@ -2554,7 +2568,7 @@ void rt_ec11_thread_entry(void* parameter)
 
 				if(result > 0)
 				{
-					pelcod_open_close_packet_send_exptend(0,abs(result)&(~0x80));
+					pelcod_open_close_packet_send_exptend(0,abs(result)&(~0x80),0x80);
 
 					
 					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
@@ -2563,14 +2577,14 @@ void rt_ec11_thread_entry(void* parameter)
 					}
 				else if(result < 0)
 				{
-					pelcod_open_close_packet_send_exptend(1,abs(result)&(~0x80));
+					pelcod_open_close_packet_send_exptend(1,abs(result)&(~0x80),0x80);
 
 					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,iris_msg[2]);
 					osd_line1_disp(0);
 					}
 
-				rt_thread_delay(40);
+				rt_thread_delay(OSD_DISP_DELAY);
 				//pelcod_stop_packet_send();
 
 				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
@@ -2579,6 +2593,7 @@ void rt_ec11_thread_entry(void* parameter)
 				osd_line1_disp(0);
 
 				
+				rs485_get_data_from_slave();
 			}
 
 		}
@@ -2597,14 +2612,14 @@ void rt_ec11_thread_entry(void* parameter)
 
 				if(result > 0)
 				{
-					pelcod_open_close_packet_send_exptend(0,abs(result)&(~0x80));
+					pelcod_open_close_packet_send_exptend(0,abs(result)&(~0x80),0x80);
 					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,iris_msg[1]);
 					osd_line1_disp(0);
 					}
 				else if(result < 0)
 				{
-					pelcod_open_close_packet_send_exptend(1,abs(result)&(~0x80));
+					pelcod_open_close_packet_send_exptend(1,abs(result)&(~0x80),0x80);
 					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,iris_msg[2]);
 					osd_line1_disp(0);
@@ -2612,7 +2627,7 @@ void rt_ec11_thread_entry(void* parameter)
 				}
 
 
-				rt_thread_delay(40);
+				rt_thread_delay(OSD_DISP_DELAY);
 				
 //				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 //				strcat(osd_mid_str_buff,iris_msg[0]);

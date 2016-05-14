@@ -33,7 +33,7 @@ u8 complex_cmd=0;
 
 static u8 Rocket_fir_data_pre=0;
 
-static void PELCO_D_P_protocol_analysis_2(void)
+void PELCO_D_P_protocol_analysis_2(void)
 {
 //	uchar KCPCom , k;
 	uchar parity_byte;
@@ -47,7 +47,7 @@ static void PELCO_D_P_protocol_analysis_2(void)
 	command_byte=0xff;
 	Rec_byte_com = 0x00;
 
-	if (keyboard_data_buffer[1] == domeNo || keyboard_data_buffer[1]==0xff) 
+	if (keyboard_data_buffer[1] == 1 || keyboard_data_buffer[1]==0xff) 
 	{
 		if ((keyboard_data_buffer[0] == 0xff) && (Protocol_No != PELCO_P))    
 		{
@@ -83,65 +83,6 @@ static void PELCO_D_P_protocol_analysis_2(void)
 		if (Keyboard_data_com == parity_byte)
 		{
 			
-			if (0x75 == keyboard_data_buffer[2])//PAN相对位置
-			{
-				command_byte = 0x90;
-				pan_tilt_flag = 1;
-				Rocket_fir_data = keyboard_data_buffer[4];
-				Rocket_sec_data = keyboard_data_buffer[5];
-				Rocket_fiv_data = keyboard_data_buffer[3];//speed 
-				pan_direction = Rocket_fiv_data & 0x80;
-			
-			}
-			else if (0x76 == keyboard_data_buffer[2])//TITL相对位置
-			{
-				command_byte = 0x90;
-				pan_tilt_flag = 2;
-				Rocket_thr_data = keyboard_data_buffer[4];
-				Rocket_fou_data = keyboard_data_buffer[5];
-				Rocket_fiv_data = keyboard_data_buffer[3];//speed
-				tilt_direction = Rocket_fiv_data & 0x80;
-					
-			}
-			else if (0x77 == keyboard_data_buffer[2])//ZOOM相对倍率(1-100)
-			{
-				command_byte = 0x91;
-				Rocket_fir_data = keyboard_data_buffer[4];//方向
-				Rocket_sec_data = keyboard_data_buffer[5];//倍值
-				
-			}
-			else if (0x20 == keyboard_data_buffer[2])//PAN and TITL相对位置
-			{
-				command_byte = 0x90;
-				Rocket_fiv_data = keyboard_data_buffer[7];//speed and direction
-				
-				if((!keyboard_data_buffer[3])&&(!keyboard_data_buffer[4]))
-				{
-					Pan_falg = 0;
-				}
-				else  //PAN 有动作
-				{
-					Pan_falg = 1;
-					Rocket_fir_data = keyboard_data_buffer[3];
-					Rocket_sec_data = keyboard_data_buffer[4];
-					pan_direction = Rocket_fiv_data & 0x80;
-				}
-				
-				if((!keyboard_data_buffer[5])&&(!keyboard_data_buffer[6]))
-				{
-					Tilt_falg = 0;
-				}
-				else  //TITL 有动作
-				{
-					Tilt_falg = 2;
-					Rocket_thr_data = keyboard_data_buffer[5];
-					Rocket_fou_data = keyboard_data_buffer[6];
-					tilt_direction = (Rocket_fiv_data & 0x40)<<1;					
-				}
-				pan_tilt_flag = Pan_falg | Tilt_falg;						
-			}
-
-			else
 				if(!keyboard_data_buffer[3])
 				{
 					switch(keyboard_data_buffer[2])
@@ -168,14 +109,7 @@ static void PELCO_D_P_protocol_analysis_2(void)
 					case 0x06:
 
 						break;
-					case 0x88:
-						command_byte = 0xff;
-						Rocket_fir_data = 0x88;
-						Rocket_sec_data = keyboard_data_buffer[2];
-						Rocket_thr_data = keyboard_data_buffer[4];
-						Rocket_fou_data = keyboard_data_buffer[5];
-						
-						break;
+
 
 					default:
 						break;
@@ -184,49 +118,6 @@ static void PELCO_D_P_protocol_analysis_2(void)
 				}
 				else
 				{
-				   	switch(keyboard_data_buffer[2])
-				   	{
-
-					case 0x1d:
-					//ReturnVersion(0);
-						command_byte = 0xff;
-						break;
-
-					case 0x40://360度自动扫描  特殊功能编号command_byte:0X80-0XA0
-						Rocket_sec_data = keyboard_data_buffer[5];
-						command_byte = 0x80;
-						break;
-					case 0x45:
-						
-						break;
-					case 0x50://run/stop tour
-						if(0x01 == keyboard_data_buffer[3])
-						{
-							Rocket_sec_data = keyboard_data_buffer[5];
-							command_byte = 0x82;
-						}
-						else if(0x02 == keyboard_data_buffer[3])
-						{
-							command_byte = 0x83;//stop all tour
-						}
-						break;
-					case 0x51://record tour
-						Rocket_sec_data = keyboard_data_buffer[5];
-						command_byte = 0x84;
-
-						break;
-					case 0x52://preset pic still
-						break;
-
-					case 0x53:
-
-						break;
-					case 0x61:
-						break;
-					case 0x62:
-						break;
-
-					default:
                         if(keyboard_data_buffer[3] != 0x03)
                         {
                             complex_cmd_flag = 0;
@@ -274,91 +165,6 @@ static void PELCO_D_P_protocol_analysis_2(void)
 								break;
 						case 0x03: command_byte = 0x10;                            //设置预置点
 						        Rocket_fir_data = keyboard_data_buffer[5]; 
-
-                                
-                                    switch(complex_cmd_flag)
-                                    {
-                                    case 0:
-                                        if(Rocket_fir_data == 255)
-                                        {
-                                            complex_cmd_flag = 1;
-                                            
-                                        }
-                                        else
-                                        {
-                                            complex_cmd = 0; //set default system parameter
-                                            complex_cmd_flag = 0;
-                                        }
-                                        break;
-                                    case 1:
-                                        if((Rocket_fir_data == 254 )||(Rocket_fir_data == 255 ))
-                                        {
-                                            complex_cmd_flag = 2; //
-                                            
-                                        }
-                                        else if(Rocket_fir_data == 253)
-                                        {
-                                            complex_cmd = 1; //set default system parameter
-                                            complex_cmd_flag = 2;
-                                        }
-                                        else if(Rocket_fir_data >= 205 && Rocket_fir_data<=208)
-                                        {
-                                            //save_system_para(Rocket_fir_data-200);
-                                            
-                                            complex_cmd = 0; //set default system parameter
-                                            complex_cmd_flag = 0;
-                                        }
-                                         else
-                                        {
-                                            complex_cmd = 0; //set default system parameter
-                                            complex_cmd_flag = 0;
-                                        }
-                                            
-                                        break;
-                                    case 2:
-                                        
-                                        Rocket_fir_data_pre = Rocket_fir_data;
-                                        complex_cmd_flag = 3;
-                                        
-                                        break;
-                                    case 3:
-
-                                        if(complex_cmd == 1)
-                                        {
-                                            if((Rocket_fir_data == 253 ))
-                                            {
-                                                //if(Rocket_fir_data_pre>=201 && Rocket_fir_data_pre<=204)
-                                                //save_system_para(Rocket_fir_data_pre-200);
-                                            }
-                                            complex_cmd = 0;
-                                        }
-                                        else
-                                        {
-                                            if((Rocket_fir_data == 255 ))
-                                            {
-                                                domeNo = Rocket_fir_data_pre;
-                                                //save_domeID(domeNo);
-                                            }
-                                            else if((Rocket_fir_data == 254 ))
-                                            {
-                                                Baud_rate = Rocket_fir_data;
-                                                if(Baud_rate>6)
-                                                    Baud_rate = 2;
-                                               // save_baudrate(Baud_rate);
-                                                
-                                            }
-
-                                            complex_cmd_flag = 0;
-                                        complex_cmd = 0;
-                                        }
-                                         
-                                        break;
-                                    default:
-                                        complex_cmd_flag = 0;
-                                        complex_cmd = 0;
-                                        break;
-                                    }
-
                                 
 								break;
 						case 0x05: command_byte = 0x12;                          //删除预置点
@@ -450,28 +256,26 @@ static void PELCO_D_P_protocol_analysis_2(void)
 						command_byte = 0xff;
 						break;
 
-						case 0x90: 
+						case 0x88:
+							command_byte = 0x99;
+							Rocket_fir_data = 0x88;
+							Rocket_sec_data = keyboard_data_buffer[2];
+							Rocket_thr_data = keyboard_data_buffer[4];
+							Rocket_fou_data = keyboard_data_buffer[5];
 							
-						        command_byte = 0xff;
-						        break;
-						case 0x91: command_byte = 0xff;
-						     	break;	
-
-						case 0x92: command_byte = 0x16;                          //已接收轮巡轨迹数据
 							break;
+
 
 						default:   if (0x00 != keyboard_data_buffer[3])
 						            command_byte = 0xff;
 							    else command_byte = 0x00;
 						        break;			
 						}
-						break;
 
 					}
 				}
 		
 				}
-       }
 }
 
 

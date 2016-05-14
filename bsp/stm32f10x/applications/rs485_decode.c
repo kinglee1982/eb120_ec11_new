@@ -167,36 +167,12 @@ void pelco_rx_isr(u8 udr0)
 			if (Isr_com >= Rec_byte_count)
 			{
 				for (i=0x00; i<20; i++) 
-					Rec_keyboard_data_buffer[i] = keyboard_data_buffer1[i];
+					keyboard_data_buffer[i] = keyboard_data_buffer1[i];
 
-				addqueue(20,keyboard_data_buffer1);
 
 				for (i=0x00; i<20; i++) 
 					keyboard_data_buffer1[i] = 0x00;
-				if ((0xa0 == Rec_keyboard_data_buffer[0]) && (Protocol_No == PELCO_P))
-				  Rec_keyboard_data_buffer[1]++;
-				if (0x80 == (0xf0 & Rec_keyboard_data_buffer[0]))
-				{
-					i = Rec_keyboard_data_buffer[0] << 4;
-					i |= Rec_keyboard_data_buffer[1] & 0x0f;
-				}
-				else 
-					i = Rec_keyboard_data_buffer[1];
 
-				if (i == domeNo)
-				{
-					switch (Protocol_No)
-					{
-					case PELCO_P: 
-
-						break;
-					case PELCO_D: 
- 
-						break;
-					default:
-						break;
-					}
-				}
 				Isr_com = 0x00; 
 				Isr_j = 0x00; 
 				Rec_byte_com = 0X01;	
@@ -263,7 +239,7 @@ rt_err_t rs485_send_data(u8* data,u16 len)
 {
 	rt_mutex_take(rs485_send_mut,RT_WAITING_FOREVER);
 	
-	RS485_TX_ENABLE;
+	//RS485_TX_ENABLE;
 	if(uart1_dev_my->device == RT_NULL)	
 	{
 		uart1_rs485_set_device();
@@ -271,12 +247,30 @@ rt_err_t rs485_send_data(u8* data,u16 len)
 	
 	rt_device_write(uart1_dev_my->device, 0, data, len);
 
-	rt_thread_delay (10);
-	RS485_RX_ENABLE;
+	//rt_thread_delay (10);
+	//RS485_RX_ENABLE;
 
 	rt_mutex_release(rs485_send_mut);
 	return RT_EOK;
 }
+
+
+void rt_rs485_decode_thread_entry(void* parameter)
+{
+//	u16 k;
+
+	while(1)
+	{
+		if(rt_sem_take(uart1_sem, RT_WAITING_FOREVER) == RT_EOK)
+        {
+			PELCO_D_P_protocol_analysis_2();
+                       
+            rt_thread_delay(RT_TICK_PER_SECOND/50);
+		}
+    }
+
+}
+
 
 int rs485_system_init(void)
 {
@@ -310,6 +304,12 @@ int rs485_system_init(void)
                                    4092, 8, 21);
 	  if (init_thread != RT_NULL)
         rt_thread_startup(init_thread);
+
+
+//    init_thread = rt_thread_create("rsdecode",rt_rs485_decode_thread_entry, RT_NULL,
+//                                   512, 8, 21);
+//    if (init_thread != RT_NULL)
+//        rt_thread_startup(init_thread);
 
     return 0;
 }

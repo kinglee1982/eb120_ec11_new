@@ -11,23 +11,18 @@ rt_err_t rs485_recieve_check(u8 val)
 {
 
 	
-	if(rt_sem_take(uart1_sem, 30) == RT_EOK)
+	if(rt_sem_take(uart1_sem, 200) == RT_EOK)
     {
-		if (command_analysis()) 
-		{
-            switch(command_byte)
-		    {
-			 	case 0x11://call preset point
+		PELCO_D_P_protocol_analysis_2();
+		
+        if(command_byte == val)
+	    {
+	    	command_byte = 0xff;
+			return RT_EOK;
 
-					if(Rocket_fir_data == val)
-						return RT_EOK;
-					break;
+   	    }
 
-             	default:
-				break;
-	   	    }
-
-		}
+		command_byte = 0xff;
 	}
 	return RT_ERROR;
 
@@ -100,7 +95,7 @@ void pelcod_set_pre_extend_packet_send(u8 val,u8 cmd)
 
 
 //val: 0,open; 1,close
-void pelcod_open_close_packet_send_exptend(u8 val,u8 speed)
+void pelcod_open_close_packet_send_exptend(u8 val,u8 speed,u8 data5)
 {
 	u8 cnt;
 	
@@ -113,7 +108,7 @@ void pelcod_open_close_packet_send_exptend(u8 val,u8 speed)
 		cmd_buff_private[2] = 0x02;
 	cmd_buff_private[3] = 0;
 	cmd_buff_private[4] = speed;
-	cmd_buff_private[5] = 0;
+	cmd_buff_private[5] = data5;
 	
 	cmd_buff_private[6] = cmd_buff_private[1] + cmd_buff_private[2] + cmd_buff_private[3] + cmd_buff_private[4] + cmd_buff_private[5];
 	rs485_send_data(cmd_buff_private,7);
@@ -185,13 +180,13 @@ void pelcod_zf_packet_send(u8 cmd,u8 zfspeed)
 	cmd_buff_private[1] = target_id;
 
 
-	if(cmd==1||cmd==2||cmd==3||cmd==4)
-	{
-		if(zfspeed>8)
-			zfspeed = 8;
-		pelcod_call_pre_packet_send(100+zfspeed);
-	}
-	
+//	if(cmd==1||cmd==2||cmd==3||cmd==4)
+//	{
+//		if(zfspeed>8)
+//			zfspeed = 8;
+//		pelcod_call_pre_packet_send(100+zfspeed);
+//	}
+//	
 	switch(cmd)
 	{
 	case 1:
@@ -253,6 +248,8 @@ extern void num_to_string(u16 data,u8 *dst);
 
 u8 iris_val_osd_buf[10];
 
+u8 iris_motor_mode = 0;
+
 u8 rs485_get_data_from_slave(void)
 {
 	u8 cnt;
@@ -268,28 +265,34 @@ u8 rs485_get_data_from_slave(void)
 	cmd_buff_private[6] = cmd_buff_private[1] + cmd_buff_private[2] + cmd_buff_private[3] + cmd_buff_private[4] + cmd_buff_private[5];
 	rs485_send_data(cmd_buff_private,7);
 	
-	cnt=3;
+	cnt=1;
 	while(cnt--)
 	{
-		if(RT_EOK == rs485_recieve_check(0x88))
+		if(RT_EOK == rs485_recieve_check(0x99))
 			{
 
 			cam_filter_mode = Rocket_sec_data;
-			iris_mode = Rocket_thr_data;
+			iris_mode = Rocket_thr_data&0x0f;
+			iris_motor_mode = (Rocket_thr_data>>4)&0x0f;
 			iris_val = Rocket_fou_data;
-
-			num_to_string((u16)iris_val,iris_val_osd_buf);
-			OLED_ShowString(88,OSD_VAL_START_ADDR_Y,OSD_LINE3_Y_POS,16); 
-			
+			if(iris_val>100)
+				iris_val=100;
+			osd_line3_disp(0);
 			break;
 
 			}
 		//else
 		//	rs485_send_data(cmd_buff_private,7);
 
+
+		
+		rs485_send_data(cmd_buff_private,7);
+		
 		rt_thread_delay(50);
 	}
 
+	//osd_line3_disp(0);
+	
 }
 
 

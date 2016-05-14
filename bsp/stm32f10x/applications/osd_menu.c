@@ -392,11 +392,11 @@ const u8 *osd_iris_man_string="P-IRIS     M";
 
 const u8 *iris_msg_osd[]=
 {
-	{"P-IRIS	 A"},
-		{"P-IRIS     M"},
-		{"P-IRIS	 A"},
-		{"P-IRIS	 A"},
-		{"P-IRIS	 A"},
+	{"DC-IRIS1  A"}, //CALL 125
+	{"P-IRIS2   A"}, // SET 125
+	{"P-IRIS3   A"}, //130
+	{"P-IRIS2   M"}, // SET 125
+	{"P-IRIS3   M"}, //130
 
 };
 
@@ -406,20 +406,75 @@ const u8 *man_string="M";
 
 #define	OSD_IRIS_X_START		0//80
 
+extern u8 iris_motor_mode;
+extern u8 iris_val;
+extern u8 iris_mode;
+extern u8 iris_val_osd_buf[10];
+
+
+void num_to_string_ex(u16 data,u8 *dst,u8 num)
+{
+
+	dst[0] = data/100+0x30;
+	dst[1] = data%100/10+0x30;
+	dst[2] = data%10+0x30;
+}
+
+
+
 void osd_iris_val_disp(u8 irisv)
 {
-	if(iris_mode>3)
-		iris_mode = 3;
+	if(iris_mode>1)
+		iris_mode = 1;
 
+	u8 tmp;
 	
-	OLED_ShowString(OSD_IRIS_X_START,OSD_LINE3_Y_POS,(u8*)iris_msg_osd[iris_mode],16); 
-	if(iris_mode == 1)
+	if(iris_mode == 1)//man
+	{
+		switch(iris_motor_mode)
+		{//// 0,call 125; 1,set 125; 2 ,set 130
+		case 1:
+			tmp = 3;
+			break;
+			case 2:
+				tmp = 4;
+				break;
+		default:
+			tmp = 1;
+			break;
+
+		}
+	}
+	else//auto
+	{
+		switch(iris_motor_mode)
+		{//// 0,call 125; 1,set 125; 2 ,set 130
+		case 1:
+			tmp = 1;
+			break;
+		case 2:
+			tmp = 2;
+			break;
+		case 0:
+			tmp = 0;
+			break;
+
+		default:
+			tmp = 1;
+			break;
+
+		}
+
+	}
+
+	OLED_ShowString(OSD_IRIS_X_START,OSD_LINE3_Y_POS,(u8*)iris_msg_osd[tmp],16); 
+
+	if(iris_mode)
 	{
 		
-	}
-	else
-		{
-
+		num_to_string_ex((u16)iris_val,iris_val_osd_buf,3);
+		OLED_ShowString(88,OSD_LINE3_Y_POS,iris_val_osd_buf,16); 
+		
 	}
 
 }

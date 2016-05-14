@@ -119,7 +119,7 @@ static int stm32_putc(struct rt_serial_device *serial, char c)
     struct stm32_uart* uart;
 
 	RS485_TX_ENABLE;
-	rt_thread_delay(RT_TICK_PER_SECOND/100);
+	//rt_thread_delay(RT_TICK_PER_SECOND/100);
 	
     RT_ASSERT(serial != RT_NULL);
     uart = (struct stm32_uart *)serial->parent.user_data;
@@ -127,7 +127,7 @@ static int stm32_putc(struct rt_serial_device *serial, char c)
     uart->uart_device->DR = c;
     while (!(uart->uart_device->SR & USART_FLAG_TC));
 
-	//RS485_RX_ENABLE;
+	RS485_RX_ENABLE;
     return 1;
 }
 
@@ -165,6 +165,8 @@ struct stm32_uart uart1 =
 };
 struct rt_serial_device serial1;
 
+
+#if 1
 void USART1_IRQHandler(void)
 {
     struct stm32_uart* uart;
@@ -173,11 +175,15 @@ void USART1_IRQHandler(void)
 
     /* enter interrupt */
     rt_interrupt_enter();
-    if(USART_GetITStatus(uart->uart_device, USART_IT_RXNE) != RESET)
-    {
-        rt_hw_serial_isr(&serial1, RT_SERIAL_EVENT_RX_IND);
+	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)//?D??那?2?那??車那??D??
+	{
+		if ((USART1->SR & USART_FLAG_RXNE) != (u16)RESET)
+		{	
+
+        	rt_hw_serial_isr(&serial1, RT_SERIAL_EVENT_RX_IND);
         /* clear interrupt */
-        USART_ClearITPendingBit(uart->uart_device, USART_IT_RXNE);
+       		//USART_ClearITPendingBit(uart->uart_device, USART_IT_RXNE);
+		}
     }
 
     if (USART_GetITStatus(uart->uart_device, USART_IT_TC) != RESET)
@@ -192,6 +198,39 @@ void USART1_IRQHandler(void)
     /* leave interrupt */
     rt_interrupt_leave();
 }
+
+#else
+void USART1_IRQHandler(void)
+{
+    struct stm32_uart* uart;
+
+    uart = &uart1;
+
+    /* enter interrupt */
+    rt_interrupt_enter();
+    if(USART_GetITStatus(uart->uart_device, USART_IT_RXNE) != RESET)
+    {
+    	if(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == SET) 
+        {
+        	rt_hw_serial_isr(&serial1, RT_SERIAL_EVENT_RX_IND);
+        /* clear interrupt */
+       		USART_ClearITPendingBit(uart->uart_device, USART_IT_RXNE);
+		}
+    }
+
+    if (USART_GetITStatus(uart->uart_device, USART_IT_TC) != RESET)
+    {
+        /* clear interrupt */
+        USART_ClearITPendingBit(uart->uart_device, USART_IT_TC);
+    }
+    if (USART_GetFlagStatus(uart->uart_device, USART_FLAG_ORE) == SET)
+    {
+        stm32_getc(&serial1);
+    }
+    /* leave interrupt */
+    rt_interrupt_leave();
+}
+#endif
 #endif /* RT_USING_UART1 */
 
 #if defined(RT_USING_UART2)
