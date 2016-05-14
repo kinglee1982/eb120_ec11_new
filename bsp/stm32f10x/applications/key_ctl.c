@@ -831,6 +831,8 @@ static void joystick_ADC_Init(void)
    
 }
 
+
+
 #define	ADC_SAMPLE_NUM	16	//ADCÖµ³éÑùÊý	
 #define	ADC_MIDDLE_START_NUM	(ADC_SAMPLE_NUM/5)
 #define	ADC_MIDDLE_END_NUM		(ADC_SAMPLE_NUM - ADC_MIDDLE_START_NUM)
@@ -876,7 +878,7 @@ static u16 DigitFilter(u16* buf,u8 no)
 	return(tmp/ADC_SAMPLE_VALID_SIZE);
 }
 
-void joystick_pin_init(void)
+static void joystick_pin_init(void)
 {
 
 	joystick_ADC_Init();
@@ -979,6 +981,10 @@ static void joystick_handle(void)
 		{
 		prestate = 1;
 		pelcod_stop_packet_send();
+				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
+		strcat(osd_mid_str_buff,joystick_msg[0]);
+		osd_line1_disp(0);
+		
 		rt_thread_delay(40);
 		}
 	}
@@ -1003,7 +1009,8 @@ static void joystick_handle(void)
 		}
 		else
 			tmp = 0;
-		
+
+		memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 		strcat(osd_mid_str_buff,joystick_msg[tmp]);
 		osd_line1_disp(0);
 		rt_thread_delay(40);
@@ -1782,7 +1789,42 @@ u16 key_detect(void)
 u16 key_from_wait = 0;
 
 
-const u8* wifi_enter_at_mode="+++AtCmd\\r\\n";
+
+//0,press; 1,no press
+u8 key_sw22_check(void)
+{
+	static u8 key_sw22_pre=0;
+	
+	if(GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3) == 0)
+	{
+		rt_thread_delay(10);
+
+			if(GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3) == 0)
+			{
+				key_sw22_pre = 1;
+				return key_sw22_pre;
+
+			}
+	}
+	else
+	{
+		if(key_sw22_pre == 1)
+		{
+			key_sw22_pre = 0x10;
+			return key_sw22_pre;
+		}
+		else
+			{
+			key_sw22_pre = 0;
+
+		}
+	}
+	
+
+	
+	return 0;
+}
+
 
 
 
@@ -1822,7 +1864,18 @@ void rt_key_thread_entry(void* parameter)
 
 		
 
-		//zoomfocus_key_handle();
+
+		k = key_sw22_check();
+		if(k==1)
+		{
+			pelcod_open_close_packet_send(0);
+		}
+		else if(k==0x10)
+		{
+
+			pelcod_stop_packet_send();
+
+		}
 		
 		rt_thread_delay(20);
     }
@@ -2048,7 +2101,9 @@ void rt_ec11_focus_thread_entry(void* parameter)
 			{
 				pelcod_zf_packet_send(PD_ZOOM_FOCUS_STOP,0);
 				
+				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 				strcat(osd_mid_str_buff,focus_msg[0]);
+				osd_line1_disp(0);
 
 				key_press_state_tmp = 0;
 				continue;
@@ -2068,21 +2123,30 @@ void rt_ec11_focus_thread_entry(void* parameter)
 				if(result > 0)
 				{
 					pelcod_zf_packet_send(PD_FOCUS_FAR_CMD,abs(result));
+					
+					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,focus_msg[1]);
+					
+					osd_line1_disp(0);
 					}
-				else
+				else if(result < 0)
 				{
 
 				pelcod_zf_packet_send(PD_FOCUS_NEAR_CMD,abs(result));
+				
+				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 				strcat(osd_mid_str_buff,focus_msg[2]);
+				osd_line1_disp(0);
 
 
 					}
 				
 				rt_thread_delay(60);
 				pelcod_zf_packet_send(PD_ZOOM_FOCUS_STOP,0);
-
+				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
+				strcat(osd_mid_str_buff,focus_msg[0]);
 				
+				osd_line1_disp(0);
 			}
 
 		}
@@ -2100,10 +2164,23 @@ void rt_ec11_focus_thread_entry(void* parameter)
 				result = BMQCounterTotal_focus;
 				
 				if(result > 0)
-					pelcod_zf_packet_send(PD_FOCUS_FAR_CMD,abs(result));
-				else
-					pelcod_zf_packet_send(PD_FOCUS_NEAR_CMD,abs(result));
+				{	pelcod_zf_packet_send(PD_FOCUS_FAR_CMD,abs(result));
 
+	
+					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
+
+				strcat(osd_mid_str_buff,focus_msg[1]);
+				osd_line1_disp(0);
+
+				}
+				else if(result < 0)
+				{
+					pelcod_zf_packet_send(PD_FOCUS_NEAR_CMD,abs(result));
+					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
+
+					strcat(osd_mid_str_buff,focus_msg[2]);
+					osd_line1_disp(0);
+					}
 				
 				rt_thread_delay(60);
 
@@ -2237,7 +2314,10 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 			if(key_press_state_tmp)
 			{
 				pelcod_zf_packet_send(PD_ZOOM_FOCUS_STOP,0);
+				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 				strcat(osd_mid_str_buff,zoom_msg[0]);
+				osd_line1_disp(0);
+
 				
 				key_press_state_tmp = 0;
 				continue;
@@ -2257,13 +2337,19 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 				if(result > 0)
 				{
 					pelcod_zf_packet_send(1,abs(result));
+					
+					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,zoom_msg[1]);
+					osd_line1_disp(0);
 
 					}
-				else
+				else if(result < 0)
 				{
 					pelcod_zf_packet_send(2,abs(result));
+					
+					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,zoom_msg[2]);
+					osd_line1_disp(0);
 
 					}
 
@@ -2271,7 +2357,9 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 				rt_thread_delay(60);
 				pelcod_zf_packet_send(PD_ZOOM_FOCUS_STOP,0);
 				
+				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 				strcat(osd_mid_str_buff,zoom_msg[0]);
+				osd_line1_disp(0);
 
 			}
 
@@ -2293,13 +2381,19 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 				if(result > 0)
 				{
 					pelcod_zf_packet_send(1,abs(result));
+					
+					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,zoom_msg[1]);
+					osd_line1_disp(0);
 
 				}
-				else
+				else if(result < 0)
 				{
 					pelcod_zf_packet_send(2,abs(result));
+					
+					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,zoom_msg[2]);
+					osd_line1_disp(0);
 
 				}
 
@@ -2438,7 +2532,11 @@ void rt_ec11_thread_entry(void* parameter)
 			if(key_press_state_tmp)
 			{
 				//pelcod_stop_packet_send();
+				
+				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 				strcat(osd_mid_str_buff,iris_msg[0]);
+				
+				osd_line1_disp(0);
 				key_press_state_tmp = 0;
 				continue;
 			}
@@ -2456,21 +2554,31 @@ void rt_ec11_thread_entry(void* parameter)
 
 				if(result > 0)
 				{
-					pelcod_open_close_packet_send_exptend(0,abs(result));
-					strcat(osd_mid_str_buff,iris_msg[1]);
-					}
-				else
-				{
-					pelcod_open_close_packet_send_exptend(1,abs(result));
-					strcat(osd_mid_str_buff,iris_msg[2]);
+					pelcod_open_close_packet_send_exptend(0,abs(result)&(~0x80));
 
+					
+					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
+					strcat(osd_mid_str_buff,iris_msg[1]);
+					osd_line1_disp(0);
+					}
+				else if(result < 0)
+				{
+					pelcod_open_close_packet_send_exptend(1,abs(result)&(~0x80));
+
+					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
+					strcat(osd_mid_str_buff,iris_msg[2]);
+					osd_line1_disp(0);
 					}
 
 				rt_thread_delay(40);
 				//pelcod_stop_packet_send();
 
+				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 				
 				strcat(osd_mid_str_buff,iris_msg[0]);
+				osd_line1_disp(0);
+
+				
 			}
 
 		}
@@ -2489,19 +2597,27 @@ void rt_ec11_thread_entry(void* parameter)
 
 				if(result > 0)
 				{
-					pelcod_open_close_packet_send_exptend(0,abs(result));
+					pelcod_open_close_packet_send_exptend(0,abs(result)&(~0x80));
+					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,iris_msg[1]);
+					osd_line1_disp(0);
 					}
-				else
+				else if(result < 0)
 				{
-					pelcod_open_close_packet_send_exptend(1,abs(result));
+					pelcod_open_close_packet_send_exptend(1,abs(result)&(~0x80));
+					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,iris_msg[2]);
+					osd_line1_disp(0);
 
 				}
 
 
 				rt_thread_delay(40);
-
+				
+//				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
+//				strcat(osd_mid_str_buff,iris_msg[0]);
+//				osd_line1_disp(0);
+//
 				key_press_state_tmp = 1;
 				
 			}
@@ -2669,7 +2785,7 @@ int rt_key_ctl_init(void)
     rt_thread_t init_thread;
 
 	key_pin_init();
-	joystick_ADC_Init();
+	joystick_pin_init();
 	
 	rt_thread_delay(200);
 
