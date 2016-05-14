@@ -440,7 +440,7 @@ void osd_iris_val_disp(u8 irisv)
 				tmp = 4;
 				break;
 		default:
-			tmp = 1;
+			tmp = 3;
 			break;
 
 		}

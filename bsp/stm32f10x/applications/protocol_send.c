@@ -192,18 +192,25 @@ void pelcod_zf_packet_send(u8 cmd,u8 zfspeed)
 	case 1:
 		cmd_buff_private[3] = 0x20;
 		cmd_buff_private[2] = 0;
+		
+		cmd_buff_private[4] = zfspeed;
 		break;
 	case 2:
 		cmd_buff_private[3] = 0x40;
 		cmd_buff_private[2] = 0;
+		cmd_buff_private[4] = zfspeed;
 		break;
 	case 3:
 		cmd_buff_private[3] = 0x00;
 		cmd_buff_private[2] = 0x01;//
+		
+		cmd_buff_private[4] = zfspeed;
 		break;
 	case 4:
 		cmd_buff_private[3] = 0x80;
 		cmd_buff_private[2] = 0;
+		
+		cmd_buff_private[4] = zfspeed;
 		break;
 	case 0:
 		cmd_buff_private[3] = 0x00;
@@ -211,7 +218,7 @@ void pelcod_zf_packet_send(u8 cmd,u8 zfspeed)
 		break;
 	}
 	
-	cmd_buff_private[4] = 0;
+	//cmd_buff_private[4] = 0;
 	cmd_buff_private[5] = 0;
 	
 	cmd_buff_private[6] = cmd_buff_private[1] + cmd_buff_private[2] + cmd_buff_private[3] + cmd_buff_private[4] + cmd_buff_private[5];
@@ -265,7 +272,7 @@ u8 rs485_get_data_from_slave(void)
 	cmd_buff_private[6] = cmd_buff_private[1] + cmd_buff_private[2] + cmd_buff_private[3] + cmd_buff_private[4] + cmd_buff_private[5];
 	rs485_send_data(cmd_buff_private,7);
 	
-	cnt=1;
+	cnt=2;
 	while(cnt--)
 	{
 		if(RT_EOK == rs485_recieve_check(0x99))

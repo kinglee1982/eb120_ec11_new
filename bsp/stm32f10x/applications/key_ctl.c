@@ -1501,20 +1501,26 @@ void key_analyze(u16 val)
 				//iris_mode = key_num_val-1;
 				if(iris_mode == 1)
 				{
+					iris_mode = 0;
 
 					pelcod_set_pre_packet_send(127);
 
 					}
 				else
 				{
+					iris_mode = 1;
 					pelcod_call_pre_packet_send(126);
 
 					}
 
-				rs485_get_data_from_slave();
+				//rt_thread_delay(200);
+				
 				//osd_line2_disp(1);
 				osd_line3_disp(1);
 				osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
+				rs485_get_data_from_slave();
+
+				
 			key_value_all_clear();
 			}
 
