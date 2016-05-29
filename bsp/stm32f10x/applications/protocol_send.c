@@ -288,6 +288,10 @@ u8 rs485_get_data_from_slave(void)
 			break;
 
 			}
+		else
+			{
+			iris_val = 0xff;
+		}
 		//else
 		//	rs485_send_data(cmd_buff_private,7);
 

@@ -51,6 +51,9 @@ enum key_type
 
 
 
+extern u8 iris_motor_mode;
+
+
 u8 cam_para_mode=0;
 
 
@@ -1442,6 +1445,7 @@ u16 num_to_baudrate(u8 numb)
 }
 
 
+
 void key_analyze(u16 val)
 {
 
@@ -1450,9 +1454,23 @@ void key_analyze(u16 val)
 	case key_to_release(KEY_CALL):
 
 		if(key_val_buffer_cnt)
-		{pelcod_call_pre_packet_send((u8)key_num_val);
+		{
+			pelcod_call_pre_packet_send((u8)key_num_val);
 
-		osd_opt_message_disp(0,OSD_MSG_DISP_MAX_SECOND);
+			osd_opt_message_disp(0,OSD_MSG_DISP_MAX_SECOND);
+
+			
+			if(key_num_val==125)
+			{
+				iris_motor_mode = 0;
+			
+			
+				osd_line3_disp(1);
+				osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
+				rs485_get_data_from_slave();
+
+			}
+
 		}
 		key_value_all_clear();
 
@@ -1460,8 +1478,27 @@ void key_analyze(u16 val)
 		break;
 	case key_to_release(KEY_PRESET):
 		if(key_val_buffer_cnt)
-		{pelcod_set_pre_packet_send((u8)key_num_val);
-		osd_opt_message_disp(1,OSD_MSG_DISP_MAX_SECOND);}
+		{
+			pelcod_set_pre_packet_send((u8)key_num_val);
+			osd_opt_message_disp(1,OSD_MSG_DISP_MAX_SECOND);
+
+			if(key_num_val == 125 || key_num_val == 130)
+			{
+
+			
+				if(key_num_val==125)
+					iris_motor_mode = 1;
+				else if(key_num_val==130)
+						iris_motor_mode = 2;
+
+				
+				osd_line3_disp(1);
+				osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
+				rs485_get_data_from_slave();
+
+			}
+
+		}
 		key_value_all_clear();
 
 		
@@ -1492,9 +1529,43 @@ void key_analyze(u16 val)
 		}
 		break;
 	case key_to_release(KEY_IRIS):
-//		if(key_num_val==0)
-//			key_value_all_clear();
-//		if(key_num_val > 0 && key_num_val < 5)
+#if 1		
+		if(key_num_val==0)
+		{
+			//key_value_all_clear();
+			
+			{
+				//iris_mode = key_num_val-1;
+				if(iris_mode == 1)
+				{
+					iris_mode = 0;
+
+					pelcod_set_pre_packet_send(127);
+
+					}
+				else
+				{
+					iris_mode = 1;
+					pelcod_call_pre_packet_send(126);
+
+					}
+
+				//rt_thread_delay(200);
+				
+				//osd_line2_disp(1);
+				osd_line3_disp(1);
+				
+				//osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
+				rs485_get_data_from_slave();
+				osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
+
+				
+			key_value_all_clear();
+			}
+		}
+		
+#else	
+		if(key_num_val > 0 && key_num_val <= 3)
 		{
 			
 			{
@@ -1526,6 +1597,7 @@ void key_analyze(u16 val)
 
 			
 		}
+#endif		
 		break;
 
 	case key_to_release(KEY_MODE):
@@ -1668,9 +1740,43 @@ void key_analyze(u16 val)
 		break;
 
 	case key_to_long(KEY_IRIS):
-		iris_mode_setup = 1;	
-		iris_mode = 0x80;
-		osd_line2_disp(1);
+
+		if(key_num_val >= 1 && key_num_val <= 3)
+		{
+			
+			{
+				iris_motor_mode = key_num_val-1;
+
+
+				switch(iris_motor_mode)
+				{
+				case 0:
+					pelcod_call_pre_packet_send(125);
+					break;
+				case 1:
+					pelcod_set_pre_packet_send(125);
+
+					break;
+				case 2:
+					pelcod_set_pre_packet_send(130);
+
+					break;
+				default:
+					break;
+				}
+
+				//rt_thread_delay(200);
+				
+				//osd_line2_disp(1);
+				osd_line3_disp(1);
+				//osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
+				rs485_get_data_from_slave();
+
+				
+			key_value_all_clear();
+			}
+		}
+
 
 		break;
 		

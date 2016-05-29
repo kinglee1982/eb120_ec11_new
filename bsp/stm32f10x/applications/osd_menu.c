@@ -469,10 +469,19 @@ void osd_iris_val_disp(u8 irisv)
 
 	OLED_ShowString(OSD_IRIS_X_START,OSD_LINE3_Y_POS,(u8*)iris_msg_osd[tmp],16); 
 
+	u8 no_val_str[]={"---"};
+	
 	if(iris_mode)
 	{
-		
-		num_to_string_ex((u16)iris_val,iris_val_osd_buf,3);
+		if(iris_val == 0xff)
+		{
+			memset(iris_val_osd_buf,0,10);
+			strcat(iris_val_osd_buf,no_val_str);
+		}
+		else
+		{
+			num_to_string_ex((u16)iris_val,iris_val_osd_buf,3);
+		}
 		OLED_ShowString(88,OSD_LINE3_Y_POS,iris_val_osd_buf,16); 
 		
 	}
@@ -516,7 +525,7 @@ void osd_shutter_val_disp(u8 sv)
 	}
 }
 
-u8 iris_val = 20;
+u8 iris_val = 0xff;
 u8 shutter_val = 5;
 
 void osd_line3_disp(u8 select)
