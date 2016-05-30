@@ -107,6 +107,18 @@ void osd_opt_message_disp(u8 type,u16 wait_s)
 	
 }
 
+void osd_opt_message_disp_extend(u8 type)
+{
+	if(type > OPT_MSG_ITERMS_MAX-1)
+		return;
+
+	osd_line1_val_disp_clear();	
+
+	OLED_ShowString(0,OSD_VAL_START_ADDR_Y,(u8*)opt_msg_string[type],16);  
+	
+}
+
+
 
 const u8 *baudrate_string[]=
 {

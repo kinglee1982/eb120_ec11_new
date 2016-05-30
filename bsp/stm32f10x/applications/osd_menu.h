@@ -29,7 +29,7 @@ extern void osd_para_mode_disp_xy(u8 mode,u8 x,u8 y);
 extern void osd_iris_mode_disp_xy(u8 mode,u8 x,u8 y);
 extern void osd_filter_mode_disp_xy(u8 mode,u8 x,u8 y);
 
-
+extern void osd_opt_message_disp_extend(u8 type);
 
 #define	LINE3_SPACE		8
 #define	LINE3_FONT_WIDTH	8

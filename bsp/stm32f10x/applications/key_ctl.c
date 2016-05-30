@@ -933,17 +933,17 @@ u8 joystick_ud_speed = 0,joystick_ud_speed_pre;
 
 const u8 *joystick_msg[]=
 {
-{"     "},
-{"Left "},
-	{"Right"},
-	{"Up   "},
-	{"Down "},
-	{"LU   "},
-	{"LD   "},
-	{"RU   "},
-	{"RD   "},
-	{"OK   "},
-	{"Left "},
+	{"          "},
+	{"Left      "},
+	{"Right     "},
+	{"Up        "},
+	{"Down      "},
+	{"LU        "},
+	{"LD        "},
+	{"RU        "},
+	{"RD        "},
+	{"OK        "},
+	{"Left      "},
 };
 
 static void joystick_handle(void)
@@ -1275,6 +1275,9 @@ u32 key_merge(void)
 	return key_tmp;
 }
 
+
+u8 long_key_state = 0;
+
 //返回0为无按键，返回非0值，则为对应的按键号
 static u32 key_ctl_check(void)
 {
@@ -1300,6 +1303,7 @@ static u32 key_ctl_check(void)
 
 						long_press_cnt=0;
 						key_pre = 0;
+						long_key_state = 1;
 						return ((i+1)|0x9000);
 					}
 
@@ -1313,8 +1317,17 @@ static u32 key_ctl_check(void)
 	}
 
 
+	
+	
 	if((key_pre && key_pre!=(i+1))||(key_pre && i==20))
 	{
+		if(long_key_state)
+		{
+			long_key_state = 0;
+			key_pre = 0;
+			return 0;
+		}
+		
 		i = key_pre|0x8000;
 		key_pre = 0;
 		return i;
@@ -1555,9 +1568,9 @@ void key_analyze(u16 val)
 				//osd_line2_disp(1);
 				osd_line3_disp(1);
 				
-				//osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
+				osd_opt_message_disp_extend(16+iris_mode);
 				rs485_get_data_from_slave();
-				osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
+				osd_opt_message_disp(16+iris_mode,20);
 
 				
 			key_value_all_clear();
