@@ -255,6 +255,10 @@ void rt_main_thread_entry(void* parameter)
 {
 
 	rs485_system_init();
+
+	
+	rs485_get_data_from_slave();
+
 	osd_init();
 	rt_thread_delay(600);
 	rt_key_ctl_init();

@@ -404,12 +404,13 @@ const u8 *osd_iris_man_string="P-IRIS     M";
 
 const u8 *iris_msg_osd[]=
 {
-	{"DC-IRIS1  A   "}, //CALL 125
-	{"P-IRIS2   A   "}, // SET 125
-	{"P-IRIS3   A   "}, //130
-	{"P-IRIS2   M   "}, // SET 125
-	{"P-IRIS3   M   "}, //130
+	{"DC-IRIS1  A    "}, //CALL 125
+	{"P-IRIS2   A    "}, // SET 125
+	{"P-IRIS3   A    "}, //130
+	{"P-IRIS2   M    "}, // SET 125
+	{"P-IRIS3   M    "}, //130
 
+	{"-------- "},
 };
 
 const u8 *auto_string="A";
@@ -479,7 +480,15 @@ void osd_iris_val_disp(u8 irisv)
 
 	}
 
-	OLED_ShowString(OSD_IRIS_X_START,OSD_LINE3_Y_POS,(u8*)iris_msg_osd[tmp],16); 
+	if(iris_motor_mode == 0xff)
+		{
+		OLED_ShowString(OSD_IRIS_X_START,OSD_LINE3_Y_POS,(u8*)iris_msg_osd[5],16); 
+	}
+	else
+		{
+		OLED_ShowString(OSD_IRIS_X_START,OSD_LINE3_Y_POS,(u8*)iris_msg_osd[tmp],16); 
+
+		}
 
 	u8 no_val_str[]={"---"};
 	

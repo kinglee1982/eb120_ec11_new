@@ -2930,6 +2930,7 @@ int rt_key_ctl_init(void)
 	rt_thread_delay(200);
 
 
+
     init_thread = rt_thread_create("key",
                                    rt_key_thread_entry, RT_NULL,
                                    1024, 10, 5);

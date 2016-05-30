@@ -255,7 +255,7 @@ extern void num_to_string(u16 data,u8 *dst);
 
 u8 iris_val_osd_buf[10];
 
-u8 iris_motor_mode = 0;
+u8 iris_motor_mode = 0xff;
 
 u8 rs485_get_data_from_slave(void)
 {
@@ -289,8 +289,9 @@ u8 rs485_get_data_from_slave(void)
 
 			}
 		else
-			{
+		{
 			iris_val = 0xff;
+			//iris_motor_mode = 0xff;
 		}
 		//else
 		//	rs485_send_data(cmd_buff_private,7);
