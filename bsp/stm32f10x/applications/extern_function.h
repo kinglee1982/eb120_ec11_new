@@ -26,6 +26,7 @@ void extern_io3_output(u8 mode);
 void key_long_osd_emu(void);
 void set_camera_uart_baudrate(u8 cbaudrate );
 
+extern void set_rs485_uart_baudrate(void);
 
 
 

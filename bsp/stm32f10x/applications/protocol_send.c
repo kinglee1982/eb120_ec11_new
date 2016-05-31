@@ -304,7 +304,7 @@ u8 rs485_get_data_from_slave(void)
 	}
 
 	//osd_line3_disp(0);
-	
+	return 0;
 }
 
 

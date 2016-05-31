@@ -52,6 +52,8 @@ enum key_type
 
 
 extern u8 iris_motor_mode;
+extern u8 rs485_get_data_from_slave(void);
+void key_value_all_clear(void);
 
 
 u8 cam_para_mode=0;
@@ -814,13 +816,13 @@ static void Photoreg_ADC_Configuration(void)
 
 }
 
-static void DMAReConfig(void)
-{
-	DMA_DeInit(DMA1_Channel1);
-	DMA_Init(DMA1_Channel1, &DMA_InitStructure);
-	DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
-	DMA_Cmd(DMA1_Channel1, ENABLE);
-}
+//static void DMAReConfig(void)
+//{
+//	DMA_DeInit(DMA1_Channel1);
+//	DMA_Init(DMA1_Channel1, &DMA_InitStructure);
+//	DMA_ITConfig(DMA1_Channel1, DMA_IT_TC, ENABLE);
+//	DMA_Cmd(DMA1_Channel1, ENABLE);
+//}
 
 
 
@@ -933,7 +935,7 @@ u8 joystick_ud_speed = 0,joystick_ud_speed_pre;
 
 const u8 *joystick_msg[]=
 {
-	{"          "},
+	{"     "},
 	{"Left      "},
 	{"Right     "},
 	{"Up        "},
@@ -986,9 +988,14 @@ static void joystick_handle(void)
 		pelcod_stop_packet_send();
 				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 		strcat(osd_mid_str_buff,joystick_msg[0]);
+
+		
+		osd_line1_val_disp_clear();
 		osd_line1_disp(0);
 		
 		rt_thread_delay(40);
+		
+		//key_value_all_clear();
 		}
 	}
 	else
@@ -1015,8 +1022,12 @@ static void joystick_handle(void)
 
 		memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 		strcat(osd_mid_str_buff,joystick_msg[tmp]);
+
+		
+		osd_line1_val_disp_clear();
 		osd_line1_disp(0);
 		rt_thread_delay(40);
+		//key_value_all_clear();
 	}
 	
 }
@@ -1290,7 +1301,7 @@ static u32 key_ctl_check(void)
 	{
 		if(((key_tmp>>i)&0x0001)==0)
 		{
-			rt_thread_delay(20);
+			rt_thread_delay(40);
 
 			key_tmp = key_merge();
 
@@ -1302,12 +1313,13 @@ static u32 key_ctl_check(void)
 					{
 
 						long_press_cnt=0;
-						key_pre = 0;
+						key_pre = 0;//(i+1)|0x9000;
 						long_key_state = 1;
 						return ((i+1)|0x9000);
 					}
 
-					long_press_cnt++;
+					if(long_key_state == 0)
+						long_press_cnt++;
 				}
 				key_pre = i+1;
 				//return (i+1);
@@ -1318,6 +1330,18 @@ static u32 key_ctl_check(void)
 
 
 	
+	if((key_pre>0x9000)&& (key_pre&0x9000 == (i+1)) && i<20)
+	{
+		if(long_key_state)
+		{
+			long_key_state = 0;
+		}
+
+		key_pre = 0;
+		return (i+1);
+
+	}
+
 	
 	if((key_pre && key_pre!=(i+1))||(key_pre && i==20))
 	{
@@ -1405,7 +1429,8 @@ extern uchar keyboard_data_buffer[20];
 u8 wait_device_reply(u8* srcdata,u8 len,u32 w_100ms)
 {
 
-
+return 0;
+	
 }
 
 
@@ -1542,7 +1567,7 @@ void key_analyze(u16 val)
 		}
 		break;
 	case key_to_release(KEY_IRIS):
-#if 1		
+
 		if(key_num_val==0)
 		{
 			//key_value_all_clear();
@@ -1577,40 +1602,7 @@ void key_analyze(u16 val)
 			}
 		}
 		
-#else	
-		if(key_num_val > 0 && key_num_val <= 3)
-		{
-			
-			{
-				//iris_mode = key_num_val-1;
-				if(iris_mode == 1)
-				{
-					iris_mode = 0;
-
-					pelcod_set_pre_packet_send(127);
-
-					}
-				else
-				{
-					iris_mode = 1;
-					pelcod_call_pre_packet_send(126);
-
-					}
-
-				//rt_thread_delay(200);
-				
-				//osd_line2_disp(1);
-				osd_line3_disp(1);
-				osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
-				rs485_get_data_from_slave();
-
-				
-			key_value_all_clear();
-			}
-
-			
-		}
-#endif		
+	
 		break;
 
 	case key_to_release(KEY_MODE):
@@ -1811,8 +1803,6 @@ void key_handle(u16 val)
 	{
 		tmp = val%10;
 
-		
-		
 		if(key_val_buffer_cnt>4)
 		{
 			key_val_buffer_cnt=0;
@@ -1868,14 +1858,11 @@ void key_handle(u16 val)
 		osd_line1_disp(32);
 
 		//osd_val_disp(osd_mid_buff,key_val_buffer_cnt);	
-		return;
+		goto KH_LABEL_EXIT;
 		
 	}
-	else
-	{
-		//if()
 
-	}
+
 	//key_val_buffer_cnt = 0;
 	
 	key_analyze(val);
@@ -1883,7 +1870,9 @@ void key_handle(u16 val)
 	osd_line1_disp(32);
 	//osd_line_little_4_disp(iris_mode);
 	//osd_line_1to4_all_disp();
-	
+
+KH_LABEL_EXIT	:
+	return;
 }
 
 
@@ -2012,8 +2001,8 @@ void ec11_check_handle(void)
 {  
 //   u8 ss_m;
 //°´¼üÖÐ¶Ï**********************************************************
-	static rt_tick_t ec11cnt = 0;
-		rt_tick_t ec11cnt_cru=0;
+//	static rt_tick_t ec11cnt = 0;
+//		rt_tick_t ec11cnt_cru=0;
 
 		
 	static rt_uint8_t pulse_state_bak = 0;
@@ -2182,7 +2171,7 @@ u8 ec11_mid_key_state = 0xff;////0,press; 1,no press
 void rt_ec11_mid_key_thread_entry(void* parameter)
 {
 
-	u16 k;
+//	u16 k;
 	
     while(1)
 	{
@@ -2216,7 +2205,7 @@ void rt_ec11_focus_thread_entry(void* parameter)
 {
 
 	u16 k;
-	s32 ec11_counter_pre = 0,ec11_counter_bak = 0;
+//	s32 ec11_counter_pre = 0,ec11_counter_bak = 0;
 
 	static u8 key_press_state_tmp = 0;
 	
@@ -2240,7 +2229,7 @@ void rt_ec11_focus_thread_entry(void* parameter)
 			
 			if(BMQCounterTotal_focus != 0)  //
 			{
-				ec11_counter_pre = BMQCounterTotal_focus;
+//				ec11_counter_pre = BMQCounterTotal_focus;
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
@@ -2287,7 +2276,7 @@ void rt_ec11_focus_thread_entry(void* parameter)
 			
 			if(BMQCounterTotal_focus != 0)  //
 			{
-				ec11_counter_pre = BMQCounterTotal_focus;
+//				ec11_counter_pre = BMQCounterTotal_focus;
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
@@ -2434,7 +2423,7 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 {
 
 	u16 k;
-	s32 ec11_counter_pre = 0,ec11_counter_bak = 0;
+//	s32 ec11_counter_pre = 0,ec11_counter_bak = 0;
 
 	static u8 key_press_state_tmp = 0;
 	
@@ -2458,7 +2447,7 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 			
 			if(BMQCounterTotal_zoom != 0)  //
 			{
-				ec11_counter_pre = BMQCounterTotal_zoom;
+//				ec11_counter_pre = BMQCounterTotal_zoom;
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
@@ -2504,7 +2493,7 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 			
 			if(BMQCounterTotal_zoom != 0)  //
 			{
-				ec11_counter_pre = BMQCounterTotal_zoom;
+//				ec11_counter_pre = BMQCounterTotal_zoom;
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
@@ -2656,7 +2645,7 @@ void rt_ec11_thread_entry(void* parameter)
 {
 
 	u16 k;
-	s32 ec11_counter_pre = 0,ec11_counter_bak = 0;
+//	s32 ec11_counter_pre = 0,ec11_counter_bak = 0;
 
 	static u8 key_press_state_tmp = 0;
 	
@@ -2682,7 +2671,7 @@ void rt_ec11_thread_entry(void* parameter)
 			
 			if(BMQCounterTotal != 0)  //
 			{
-				ec11_counter_pre = BMQCounterTotal;
+//				ec11_counter_pre = BMQCounterTotal;
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
@@ -2727,7 +2716,7 @@ void rt_ec11_thread_entry(void* parameter)
 			
 			if(BMQCounterTotal != 0)  //
 			{
-				ec11_counter_pre = BMQCounterTotal;
+//				ec11_counter_pre = BMQCounterTotal;
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
@@ -2900,22 +2889,22 @@ void rt_blink_thread_entry(void* parameter)
 
 
 
-static rt_timer_t timer1;  
-static rt_uint8_t count;  
+//static rt_timer_t timer1;  
+//static rt_uint8_t count;  
 //////////22222222222222
 
-void ec11_ISR(void)                                       
-{
+//void ec11_ISR(void)                                       
+//{
 
-}
+//}
 
 
-static void timeout1(void* parameter)  
-{  
+//static void timeout1(void* parameter)  
+//{  
 
-	ec11_ISR();
+//	ec11_ISR();
 
-} 
+//} 
 
 
 int rt_key_ctl_init(void)
