@@ -902,10 +902,10 @@ static void joystick_pin_init(void)
 
 
 #define	JOYSTICK_UD_VOL_MID_MAX		1900
-#define	JOYSTICK_UD_VOL_MID_MIN		1400
+#define	JOYSTICK_UD_VOL_MID_MIN		1350
 
-#define	JOYSTICK_LR_VOL_MID_MAX		1800
-#define	JOYSTICK_LR_VOL_MID_MIN		1400
+#define	JOYSTICK_LR_VOL_MID_MAX		1900
+#define	JOYSTICK_LR_VOL_MID_MIN		1350
 
 #define	JOYSTICK_VOL_PER_LEVEL_VOL		300
 
@@ -1301,7 +1301,7 @@ static u32 key_ctl_check(void)
 	{
 		if(((key_tmp>>i)&0x0001)==0)
 		{
-			rt_thread_delay(40);
+			rt_thread_delay(100);
 
 			key_tmp = key_merge();
 
@@ -1309,7 +1309,7 @@ static u32 key_ctl_check(void)
 			{
 				if(key_pre == i+1)
 				{
-					if(long_press_cnt>40)
+					if(long_press_cnt>20)
 					{
 
 						long_press_cnt=0;
@@ -1573,6 +1573,7 @@ void key_analyze(u16 val)
 			//key_value_all_clear();
 			
 			{
+				osd_line3_disp(1);
 				//iris_mode = key_num_val-1;
 				if(iris_mode == 1)
 				{
@@ -1752,6 +1753,7 @@ void key_analyze(u16 val)
 			{
 				iris_motor_mode = key_num_val-1;
 
+				osd_line3_disp(1);
 
 				switch(iris_motor_mode)
 				{
