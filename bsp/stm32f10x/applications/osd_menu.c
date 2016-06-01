@@ -402,6 +402,26 @@ const u8 *osd_shutter_string="S:";
 const u8 *osd_iris_auto_string="P-IRIS     A";
 const u8 *osd_iris_man_string="P-IRIS     M";
 
+
+#if 1
+const u8 *iris_msg_osd[]=
+{
+	{"DC-IRIS1  "}, //CALL 125
+	{"P-IRIS2   "}, // SET 125
+	{"P-IRIS3   "}, //130
+	{"P-IRIS2   "}, // SET 125
+	{"P-IRIS3   "}, //130
+
+	{"-------- "},
+};
+
+
+const u8 *iris_mode_osd[]=
+{
+		{"A "},
+		{"M "}
+};
+#else
 const u8 *iris_msg_osd[]=
 {
 	{"DC-IRIS1       "}, //CALL 125
@@ -412,6 +432,8 @@ const u8 *iris_msg_osd[]=
 
 	{"-------- "},
 };
+#endif
+
 
 const u8 *auto_string="A";
 const u8 *man_string="M";
@@ -434,7 +456,66 @@ void num_to_string_ex(u16 data,u8 *dst,u8 num)
 }
 
 
+#if 1
+void osd_iris_val_disp(u8 irisv)
+{
+	if(iris_mode>1)
+		iris_mode = 1;
 
+	u8 tmp;
+	u8 no_val_str[]={"---"};
+
+
+
+	if(iris_motor_mode > 4)
+		{
+		OLED_ShowString(OSD_IRIS_X_START,OSD_LINE3_Y_POS,(u8*)iris_msg_osd[5],16); 
+	}
+	else
+		{
+		OLED_ShowString(OSD_IRIS_X_START,OSD_LINE3_Y_POS,(u8*)iris_msg_osd[iris_motor_mode],16); 
+
+		}
+
+	
+
+	if(0 == iris_motor_mode)
+	{
+
+		memset(iris_val_osd_buf,0,10);
+		strcat(iris_val_osd_buf,no_val_str);
+
+		OLED_ShowString(88,OSD_LINE3_Y_POS,iris_val_osd_buf,16); 
+			
+	}
+	else
+	{
+			
+		memset(iris_val_osd_buf,0,10);
+		strcat(iris_val_osd_buf,iris_mode_osd[iris_mode]);
+		
+		if(iris_mode)
+		{
+			if(iris_val == 0xff)
+			{
+				strcat(iris_val_osd_buf,no_val_str);
+			}
+			else
+			{
+				num_to_string_ex((u16)iris_val,iris_val_osd_buf,3);
+			}
+			
+		}
+		OLED_ShowString(88,OSD_LINE3_Y_POS,iris_val_osd_buf,16); 
+
+	}
+	
+
+
+}
+
+
+#else
 void osd_iris_val_disp(u8 irisv)
 {
 	if(iris_mode>1)
@@ -508,7 +589,7 @@ void osd_iris_val_disp(u8 irisv)
 	}
 
 }
-
+#endif
 
 const u8 *shutter_val_string[]=
 {

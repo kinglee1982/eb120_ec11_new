@@ -255,7 +255,7 @@ extern void num_to_string(u16 data,u8 *dst);
 
 u8 iris_val_osd_buf[10];
 
-u8 iris_motor_mode = 0xff;
+u8 iris_motor_mode = 0;
 
 u8 rs485_get_data_from_slave(void)
 {
@@ -280,7 +280,7 @@ u8 rs485_get_data_from_slave(void)
 
 			cam_filter_mode = Rocket_sec_data;
 			iris_mode = Rocket_thr_data&0x0f;
-			iris_motor_mode = (Rocket_thr_data>>4)&0x0f;
+			//iris_motor_mode = (Rocket_thr_data>>4)&0x0f;
 			iris_val = Rocket_fou_data;
 			if(iris_val>100)
 				iris_val=100;
