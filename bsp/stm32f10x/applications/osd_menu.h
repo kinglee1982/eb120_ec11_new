@@ -31,7 +31,7 @@ extern void osd_filter_mode_disp_xy(u8 mode,u8 x,u8 y);
 extern void osd_line1_disp(u8 x);
 
 extern void osd_opt_message_disp_extend(u8 type);
-extern void osd_opt_message_disp_iris(void);
+extern void osd_opt_message_disp_iris(u8 val);
 
 #define	LINE3_SPACE		8
 #define	LINE3_FONT_WIDTH	8

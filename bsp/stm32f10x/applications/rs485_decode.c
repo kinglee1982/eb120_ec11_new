@@ -247,6 +247,8 @@ rt_mutex_t rs485_send_mut = RT_NULL;
 rt_err_t rs485_send_data(u8* data,u16 len)
 {
 	rt_mutex_take(rs485_send_mut,RT_WAITING_FOREVER);
+
+	rt_thread_delay (80);
 	
 	RS485_TX_ENABLE;
 	if(uart1_dev_my->device == RT_NULL)	

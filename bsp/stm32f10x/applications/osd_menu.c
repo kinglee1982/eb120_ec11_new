@@ -138,12 +138,12 @@ void osd_opt_message_disp_extend(u8 type)
 	
 }
 
-void osd_opt_message_disp_iris(void)
+void osd_opt_message_disp_iris(u8 val)
 {
 
 	osd_line1_val_disp_clear();	
 
-	OLED_ShowString(0,OSD_VAL_START_ADDR_Y,(u8*)iris_msg_osd[iris_motor_mode],16);  
+	OLED_ShowString(0,OSD_VAL_START_ADDR_Y,(u8*)iris_msg_osd[val],16);  
 	
 }
 
