@@ -7,6 +7,7 @@
 
 extern rt_sem_t	uart1_sem;
 
+extern rt_err_t rs485_send_data(u8* data,u16 len);
 rt_err_t rs485_recieve_check(u8 val)
 {
 
@@ -30,9 +31,43 @@ rt_err_t rs485_recieve_check(u8 val)
 
 
 
+void rs485_recieve_test(void)
+{
+	while(1)
+	{
+		if(RT_EOK == rs485_recieve_check(0x99))
+		{
+
+			cam_filter_mode = Rocket_sec_data;
+			iris_mode = Rocket_thr_data&0x0f;
+			//iris_motor_mode = (Rocket_thr_data>>4)&0x0f;
+
+			osd_line3_disp(0);
+
+
+		}
+	}
+
+	while(1)
+	{
+		if(rt_sem_take(uart1_sem, 200) == RT_EOK)
+	    {
+			rs485_send_data(keyboard_data_buffer, 7);
+
+
+		}
+	}
+
+
+
+
+	
+}
+
+
+
 rt_sem_t rs485_return_sem;
 
-extern rt_err_t rs485_send_data(u8* data,u16 len);
 
 void pelcod_call_pre_packet_send(u8 val)
 {
@@ -257,11 +292,81 @@ u8 iris_val_osd_buf[10];
 
 u8 iris_motor_mode = 0;
 
+
+
+
+u8 rs485_get_data_from_slave_thread(void)
+{
+	
+	static u8 cmd_buff_private[7];
+
+	u8 cam_filter_mode_bak = 0xff,iris_mode_bak=0xff,iris_val_bak=0;
+	
+	cmd_buff_private[0] = 0xff;
+	cmd_buff_private[1] = target_id;
+		cmd_buff_private[2] = 0;
+	cmd_buff_private[3] = 0x88;
+	cmd_buff_private[4] = 0;
+	cmd_buff_private[5] = 0;
+	
+	cmd_buff_private[6] = cmd_buff_private[1] + cmd_buff_private[2] + cmd_buff_private[3] + cmd_buff_private[4] + cmd_buff_private[5];
+
+
+	while(1)
+	{
+		rt_thread_delay(300);
+
+		rs485_send_data(cmd_buff_private,7);
+	
+	
+		if(RT_EOK == rs485_recieve_check(0x99))
+		{
+
+			cam_filter_mode = Rocket_sec_data;
+			iris_mode = Rocket_thr_data&0x0f;
+			//iris_motor_mode = (Rocket_thr_data>>4)&0x0f;
+			iris_val = Rocket_fou_data;
+			if(iris_val>100)
+				iris_val=100;
+
+			if(iris_val_bak != iris_val || cam_filter_mode_bak!=cam_filter_mode || iris_mode_bak!= iris_mode)
+			{
+				iris_val_bak = iris_val;
+				cam_filter_mode_bak = cam_filter_mode;
+				iris_mode_bak = iris_mode;
+
+				
+				osd_line3_disp(0);
+			}
+
+		}
+		else
+		{
+			iris_val = 0xff;
+			//iris_motor_mode = 0xff;
+		}
+		
+	}
+
+	//osd_line3_disp(0);
+	return 0;
+}
+
+
+
+
 u8 rs485_get_data_from_slave(void)
+#if 1
+
+{}
+#else
 {
 	u8 cnt;
 	
 	u8 cmd_buff_private[7];
+
+	rt_thread_delay(100);
+	
 	cmd_buff_private[0] = 0xff;
 	cmd_buff_private[1] = target_id;
 		cmd_buff_private[2] = 0;
@@ -306,5 +411,5 @@ u8 rs485_get_data_from_slave(void)
 	//osd_line3_disp(0);
 	return 0;
 }
-
+#endif
 

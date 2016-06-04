@@ -13,6 +13,10 @@
 #include "key_ctl.h"
 
 
+extern u8 iris_motor_mode;
+
+extern rt_mutex_t oled_disp_mut;
+
 #define	IRIS_MSG_ITERMS_MAX		5
 
 const u8 *iris_msg_string[IRIS_MSG_ITERMS_MAX]=
@@ -67,6 +71,22 @@ const u8 *opt_msg_string[]=
 
 };
 
+
+#if 1
+const u8 *iris_msg_osd[]=
+{
+	{"DC-IRIS1  "}, //CALL 125
+	{"P-IRIS2   "}, // SET 125
+	{"P-IRIS3   "}, //130
+	{"P-IRIS2   "}, // SET 125
+	{"P-IRIS3   "}, //130
+
+	{"-------- "},
+};
+
+
+
+
 void osd_clear_x_y(u8 x_start,u8 x_end,u8 y,u8 sizef)
 {
 	u8 ii;
@@ -115,6 +135,15 @@ void osd_opt_message_disp_extend(u8 type)
 	osd_line1_val_disp_clear();	
 
 	OLED_ShowString(0,OSD_VAL_START_ADDR_Y,(u8*)opt_msg_string[type],16);  
+	
+}
+
+void osd_opt_message_disp_iris(void)
+{
+
+	osd_line1_val_disp_clear();	
+
+	OLED_ShowString(0,OSD_VAL_START_ADDR_Y,(u8*)iris_msg_osd[iris_motor_mode],16);  
 	
 }
 
@@ -296,6 +325,7 @@ void osd_line1_disp(u8 x)
 void OLED_Clear_line(u8 x,u8 y,u8 sizef)  
 {  
 	u8 i,n;		
+	rt_mutex_take(oled_disp_mut,RT_WAITING_FOREVER);
 
 	i = y;
 	
@@ -304,6 +334,9 @@ void OLED_Clear_line(u8 x,u8 y,u8 sizef)
 	OLED_WR_Byte (0x00,OLED_CMD);      //¨¦¨¨????¨º??????a¨¢D¦Ì¨ª¦Ì??¡¤
 	OLED_WR_Byte (0x10,OLED_CMD);      //¨¦¨¨????¨º??????a¨¢D??¦Ì??¡¤   
 	for(n=0;n<128;n++)OLED_WR_Byte(0,OLED_DATA); 
+
+	rt_mutex_release(oled_disp_mut);
+	
 }
 
 
@@ -403,17 +436,7 @@ const u8 *osd_iris_auto_string="P-IRIS     A";
 const u8 *osd_iris_man_string="P-IRIS     M";
 
 
-#if 1
-const u8 *iris_msg_osd[]=
-{
-	{"DC-IRIS1  "}, //CALL 125
-	{"P-IRIS2   "}, // SET 125
-	{"P-IRIS3   "}, //130
-	{"P-IRIS2   "}, // SET 125
-	{"P-IRIS3   "}, //130
 
-	{"-------- "},
-};
 
 
 const u8 *iris_mode_osd[]=

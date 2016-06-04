@@ -173,6 +173,7 @@ void pelco_rx_isr(u8 udr0)
 				for (i=0x00; i<20; i++) 
 					keyboard_data_buffer1[i] = 0x00;
 
+
 				Isr_com = 0x00; 
 				Isr_j = 0x00; 
 				Rec_byte_com = 0X01;	
@@ -195,7 +196,15 @@ void rt_rs485_thread_entry(void* parameter)
         /* read one character from device */
         while (rt_device_read(uart1_dev_my->device, 0, &ch, 1) == 1)
         {
-            pelco_rx_isr(ch);
+#if 0
+			u8 datatmp;
+
+			datatmp = ch;
+			rs485_send_data(&datatmp, 1);
+
+#endif
+			
+		pelco_rx_isr(ch);
         } /* end of device read */
     }	
 	
@@ -239,7 +248,7 @@ rt_err_t rs485_send_data(u8* data,u16 len)
 {
 	rt_mutex_take(rs485_send_mut,RT_WAITING_FOREVER);
 	
-	//RS485_TX_ENABLE;
+	RS485_TX_ENABLE;
 	if(uart1_dev_my->device == RT_NULL)	
 	{
 		uart1_rs485_set_device();
@@ -248,7 +257,7 @@ rt_err_t rs485_send_data(u8* data,u16 len)
 	rt_device_write(uart1_dev_my->device, 0, data, len);
 
 	//rt_thread_delay (10);
-	//RS485_RX_ENABLE;
+	RS485_RX_ENABLE;
 
 	rt_mutex_release(rs485_send_mut);
 	return RT_EOK;

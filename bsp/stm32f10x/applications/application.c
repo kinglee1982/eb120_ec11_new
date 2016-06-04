@@ -251,10 +251,15 @@ extern void OLED_Init(void);
 extern void osd_test(void);
 extern void osd_init(void);
 
+
+rt_mutex_t oled_disp_mut = RT_NULL;
+
+
 void rt_main_thread_entry(void* parameter)
 {
 
 	rs485_system_init();
+	oled_disp_mut = rt_mutex_create("oleddis",RT_IPC_FLAG_FIFO);
 
 	
 	rs485_get_data_from_slave();

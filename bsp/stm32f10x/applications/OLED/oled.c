@@ -25,6 +25,10 @@
 #include "oledfont.h"  	 
 #include "rtthread.h"
 
+
+extern rt_mutex_t oled_disp_mut;
+
+
 //OLED的显存
 //存放格式如下.
 //[0]0 1 2 3 ... 127	
@@ -207,6 +211,9 @@ void OLED_Display_Off(void)
 void OLED_Clear(void)  
 {  
 	u8 i,n;		    
+
+	
+	rt_mutex_take(oled_disp_mut,RT_WAITING_FOREVER);
 	for(i=0;i<8;i++)  
 	{  
 		OLED_WR_Byte (0xb0+i,OLED_CMD);    //设置页地址（0~7）
@@ -214,6 +221,9 @@ void OLED_Clear(void)
 		OLED_WR_Byte (0x10,OLED_CMD);      //设置显示位置—列高地址   
 		for(n=0;n<128;n++)OLED_WR_Byte(0,OLED_DATA); 
 	} //更新显示
+
+	
+	rt_mutex_release(oled_disp_mut);
 }
 void OLED_On(void)  
 {  
@@ -234,6 +244,8 @@ void OLED_On(void)
 void OLED_ShowChar(u8 x,u8 y,u8 chr,u8 Char_Size)
 {      	
 	unsigned char c=0,i=0;	
+	rt_mutex_take(oled_disp_mut,RT_WAITING_FOREVER);
+	
 		c=chr-' ';//得到偏移后的值			
 		if(x>Max_Column-1){x=0;y=y+2;}
 		if(Char_Size ==16)
@@ -259,6 +271,9 @@ void OLED_ShowChar(u8 x,u8 y,u8 chr,u8 Char_Size)
 			OLED_WR_Byte(F4X6[c][i],OLED_DATA);
 			
 		}
+
+		
+		rt_mutex_release(oled_disp_mut);
 }
 //m^n函数
 u32 oled_pow(u8 m,u8 n)
@@ -296,6 +311,7 @@ void OLED_ShowNum(u8 x,u8 y,u32 num,u8 len,u8 size2)
 void OLED_ShowString(u8 x,u8 y,u8 *chr,u8 Char_Size)
 {
 	unsigned char j=0;
+	
 	while (chr[j]!='\0')
 	{		OLED_ShowChar(x,y,chr[j],Char_Size);
 			x+=8;

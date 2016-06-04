@@ -118,7 +118,7 @@ static int stm32_putc(struct rt_serial_device *serial, char c)
 {
     struct stm32_uart* uart;
 
-	RS485_TX_ENABLE;
+	//RS485_TX_ENABLE;
 	//rt_thread_delay(RT_TICK_PER_SECOND/100);
 	
     RT_ASSERT(serial != RT_NULL);
@@ -127,7 +127,7 @@ static int stm32_putc(struct rt_serial_device *serial, char c)
     uart->uart_device->DR = c;
     while (!(uart->uart_device->SR & USART_FLAG_TC));
 
-	RS485_RX_ENABLE;
+	//RS485_RX_ENABLE;
     return 1;
 }
 

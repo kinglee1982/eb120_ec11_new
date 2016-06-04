@@ -11,6 +11,7 @@ extern void pelcod_zf_packet_send(u8 cmd,u8 zfspeed);
 //exptend
 extern void pelcod_open_close_packet_send_exptend(u8 val,u8 speed,u8 data5);
 extern u8 rs485_get_data_from_slave(void);
+extern u8 rs485_get_data_from_slave_thread(void);
 
 
 //

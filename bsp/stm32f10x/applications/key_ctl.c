@@ -902,12 +902,19 @@ static void joystick_pin_init(void)
 
 
 #define	JOYSTICK_UD_VOL_MID_MAX		1900
-#define	JOYSTICK_UD_VOL_MID_MIN		1350
+#define	JOYSTICK_UD_VOL_MID_MIN		1400
+
+#define	JOYSTICK_UD_VOL_MID_MAX_2		2000
+
+
 
 #define	JOYSTICK_LR_VOL_MID_MAX		1900
-#define	JOYSTICK_LR_VOL_MID_MIN		1350
+#define	JOYSTICK_LR_VOL_MID_MIN		1400
 
-#define	JOYSTICK_VOL_PER_LEVEL_VOL		300
+#define	JOYSTICK_LR_VOL_MID_MAX_2		2000
+
+
+#define	JOYSTICK_VOL_PER_LEVEL_VOL		200
 
 u16 joystick_lr_value,joystick_up_value;
 
@@ -1032,6 +1039,8 @@ static void joystick_handle(void)
 	
 }
 
+#define	VOLATAGE_SPEED_VAL_BASE	 200
+
 
 static u16  Get_joystick_Value(void)
 {
@@ -1063,13 +1072,13 @@ static u16  Get_joystick_Value(void)
 	else if(joystick_lr_value < JOYSTICK_LR_VOL_MID_MIN)
 	{
 		joystick_lr_dir_state = JOYSTICK_DIR_LEFT;
-		joystick_lr_speed = (JOYSTICK_LR_VOL_MID_MIN - joystick_lr_value)/300 + 1;
+		joystick_lr_speed = (JOYSTICK_LR_VOL_MID_MIN - joystick_lr_value)/VOLATAGE_SPEED_VAL_BASE + 1;
 
 	}
-	else if(joystick_lr_value > JOYSTICK_LR_VOL_MID_MAX)
+	else if(joystick_lr_value > JOYSTICK_LR_VOL_MID_MAX_2)
 	{
 		joystick_lr_dir_state = JOYSTICK_DIR_RIGHT;
-		joystick_lr_speed = (joystick_lr_value - JOYSTICK_LR_VOL_MID_MAX)/300 + 1;
+		joystick_lr_speed = (joystick_lr_value - JOYSTICK_LR_VOL_MID_MAX)/VOLATAGE_SPEED_VAL_BASE + 1;
 
 	}
 
@@ -1081,13 +1090,13 @@ static u16  Get_joystick_Value(void)
 	else if(joystick_up_value < JOYSTICK_UD_VOL_MID_MIN)
 	{
 		joystick_ud_dir_state = JOYSTICK_DIR_DOWN;
-		joystick_ud_speed = (JOYSTICK_UD_VOL_MID_MIN - joystick_up_value)/300 + 1;
+		joystick_ud_speed = (JOYSTICK_UD_VOL_MID_MIN - joystick_up_value)/VOLATAGE_SPEED_VAL_BASE + 1;
 
 	}
-	else if(joystick_up_value > JOYSTICK_UD_VOL_MID_MAX)
+	else if(joystick_up_value > JOYSTICK_UD_VOL_MID_MAX_2)
 	{
 		joystick_ud_dir_state = JOYSTICK_DIR_UP;
-		joystick_ud_speed = (joystick_up_value - JOYSTICK_UD_VOL_MID_MAX)/300 + 1;
+		joystick_ud_speed = (joystick_up_value - JOYSTICK_UD_VOL_MID_MAX)/VOLATAGE_SPEED_VAL_BASE + 1;
 
 	}
 
@@ -1313,13 +1322,20 @@ static u32 key_ctl_check(void)
 					{
 
 						long_press_cnt=0;
-						key_pre = 0;//(i+1)|0x9000;
+						key_pre = (i+1)|0x9000;
 						long_key_state = 1;
 						return ((i+1)|0x9000);
 					}
 
 					if(long_key_state == 0)
 						long_press_cnt++;
+				}
+				else if((key_pre&0x9000) == i+1)
+				{
+
+						//key_pre = (i+1)|0x9000;
+						//long_key_state = 1;
+						return (0);
 				}
 				key_pre = i+1;
 				//return (i+1);
@@ -1342,6 +1358,7 @@ static u32 key_ctl_check(void)
 
 	}
 
+	
 	
 	if((key_pre && key_pre!=(i+1))||(key_pre && i==20))
 	{
@@ -1776,6 +1793,7 @@ void key_analyze(u16 val)
 				
 				//osd_line2_disp(1);
 				osd_line3_disp(1);
+				osd_opt_message_disp_iris();
 				//osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
 				rs485_get_data_from_slave();
 
@@ -2641,6 +2659,7 @@ const u8* iris_msg[]=
 };
 
 
+extern void rs485_recieve_test(void);
 
 #if 1
 void rt_ec11_thread_entry(void* parameter)
@@ -2650,6 +2669,12 @@ void rt_ec11_thread_entry(void* parameter)
 //	s32 ec11_counter_pre = 0,ec11_counter_bak = 0;
 
 	static u8 key_press_state_tmp = 0;
+
+
+	//rs485_recieve_test();
+
+
+	
 	
     while(1)
 	{
@@ -2908,6 +2933,14 @@ void rt_blink_thread_entry(void* parameter)
 
 //} 
 
+u8 rs485_get_data_from_slave_thread_entry(void* parameter)
+{
+
+	rs485_get_data_from_slave_thread();
+
+
+
+}
 
 int rt_key_ctl_init(void)
 {
@@ -2945,6 +2978,13 @@ int rt_key_ctl_init(void)
 	init_thread = rt_thread_create("ec11f",
                                    rt_ec11_focus_thread_entry, RT_NULL,
                                    512, 10, 5);
+    if (init_thread != RT_NULL)
+        rt_thread_startup(init_thread);
+
+
+	init_thread = rt_thread_create("get",
+                                   rs485_get_data_from_slave_thread_entry, RT_NULL,
+                                   300, 10, 5);
     if (init_thread != RT_NULL)
         rt_thread_startup(init_thread);
 
