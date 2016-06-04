@@ -75,7 +75,7 @@ const u8 *opt_msg_string[]=
 #if 1
 const u8 *iris_msg_osd[]=
 {
-	{"DC-IRIS1  "}, //CALL 125
+	{"DC-IRIS1       "}, //CALL 125
 	{"P-IRIS2   "}, // SET 125
 	{"P-IRIS3   "}, //130
 	{"P-IRIS2   "}, // SET 125
@@ -500,15 +500,19 @@ void osd_iris_val_disp(u8 irisv)
 
 		}
 
-	
+#if 0
+	iris_motor_mode = 1;
+	iris_mode = 1;
+	iris_val = 50;
+#endif
 
 	if(0 == iris_motor_mode)
 	{
 
 		memset(iris_val_osd_buf,0,10);
-		strcat(iris_val_osd_buf,no_val_str);
-
-		OLED_ShowString(88,OSD_LINE3_Y_POS,iris_val_osd_buf,16); 
+//		strcat(iris_val_osd_buf,no_val_str);
+//
+//		OLED_ShowString(88,OSD_LINE3_Y_POS,iris_val_osd_buf,16); 
 			
 	}
 	else
@@ -525,7 +529,7 @@ void osd_iris_val_disp(u8 irisv)
 			}
 			else
 			{
-				num_to_string_ex((u16)iris_val,iris_val_osd_buf,3);
+				num_to_string_ex((u16)iris_val,iris_val_osd_buf+1,3);
 			}
 			
 		}

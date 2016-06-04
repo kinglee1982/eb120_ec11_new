@@ -1789,8 +1789,11 @@ void key_analyze(u16 val)
 					break;
 				}
 
-				//rt_thread_delay(200);
-				
+				rt_thread_delay(200);
+				iris_mode = 0;
+				pelcod_set_pre_packet_send(127);
+
+					
 				//osd_line2_disp(1);
 				osd_line3_disp(1);
 				osd_opt_message_disp_iris();
