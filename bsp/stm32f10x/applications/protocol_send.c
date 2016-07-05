@@ -38,7 +38,10 @@ void rs485_recieve_test(void)
 		if(RT_EOK == rs485_recieve_check(0x99))
 		{
 
-			cam_filter_mode = Rocket_sec_data;
+			cam_filter_mode = Rocket_sec_data-1;
+
+			if(cam_filter_mode>3)
+			cam_filter_mode = 0;
 			iris_mode = Rocket_thr_data&0x0f;
 			//iris_motor_mode = (Rocket_thr_data>>4)&0x0f;
 
@@ -314,7 +317,7 @@ u8 rs485_get_data_from_slave_thread(void)
 
 	while(1)
 	{
-		rt_thread_delay(300);
+		rt_thread_delay(800);
 
 		rs485_send_data(cmd_buff_private,7);
 	
@@ -322,7 +325,11 @@ u8 rs485_get_data_from_slave_thread(void)
 		if(RT_EOK == rs485_recieve_check(0x99))
 		{
 
-			cam_filter_mode = Rocket_sec_data;
+			cam_filter_mode = Rocket_sec_data-1;
+
+			if(cam_filter_mode>3)
+			cam_filter_mode = 0;
+			
 			iris_mode = Rocket_thr_data&0x0f;
 			//iris_motor_mode = (Rocket_thr_data>>4)&0x0f;
 			iris_val = Rocket_fou_data;
@@ -337,6 +344,7 @@ u8 rs485_get_data_from_slave_thread(void)
 
 				
 				osd_line3_disp(0);
+				osd_line2_disp(0);
 			}
 
 		}

@@ -254,9 +254,26 @@ extern void osd_init(void);
 
 rt_mutex_t oled_disp_mut = RT_NULL;
 
+#ifndef BANK1_WRITE_START_ADDR
+#define BANK1_WRITE_START_ADDR  ((uint32_t)0x0803c000)
+#endif
+
+
+extern u8 iris_motor_mode;
 
 void rt_main_thread_entry(void* parameter)
 {
+	u32 flash_my_data;
+
+	u32 * myflashadd;
+	myflashadd = (u32 *)(BANK1_WRITE_START_ADDR);
+	flash_my_data = *(myflashadd);
+
+	if((flash_my_data&0xffff0000) == 0x12340000)
+	{
+		iris_motor_mode = flash_my_data&0x000000ff;
+	}
+	
 
 	rs485_system_init();
 	oled_disp_mut = rt_mutex_create("oleddis",RT_IPC_FLAG_FIFO);

@@ -151,7 +151,7 @@
             <RestoreSysVw>1</RestoreSysVw>
           </Target>
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
-          <TargetSelection>6</TargetSelection>
+          <TargetSelection>11</TargetSelection>
           <SimDlls>
             <CpuDll></CpuDll>
             <CpuDllArguments></CpuDllArguments>
@@ -165,7 +165,7 @@
             <PeripheralDll></PeripheralDll>
             <PeripheralDllArguments></PeripheralDllArguments>
             <InitializationFile></InitializationFile>
-            <Driver>Segger\JL2CM3.dll</Driver>
+            <Driver>STLink\ST-LINKIII-KEIL_SWO.dll</Driver>
           </TargetDlls>
         </DebugOption>
         <Utilities>
@@ -486,6 +486,11 @@
               <FileName>protocol_send.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\protocol_send.c</FilePath>
+            </File>
+            <File>
+              <FileName>flash_program.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\flash_program.c</FilePath>
             </File>
           </Files>
         </Group>

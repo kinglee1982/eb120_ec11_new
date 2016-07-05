@@ -11,6 +11,11 @@
 
 #include <stdlib.h>
 
+#ifndef BANK1_WRITE_START_ADDR
+#define BANK1_WRITE_START_ADDR  ((uint32_t)0x0803c000)
+#endif
+
+
 #define	KEY_PORT1		GPIOA
 #define	KEY_PORT2		GPIOB
 #define	KEY_PORT3		GPIOC
@@ -955,6 +960,8 @@ const u8 *joystick_msg[]=
 	{"Left      "},
 };
 
+#define	BEEP_DELAY		200
+
 static void joystick_handle(void)
 {
 
@@ -1007,6 +1014,14 @@ static void joystick_handle(void)
 	}
 	else
 	{
+
+	
+	GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_SET);
+	
+	rt_thread_delay(BEEP_DELAY);
+	GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_RESET);
+
+
 		prestate = 0;
 		pelcod_lrud_pre_packet_send(lrudcmd2,lrspeed, udspeed);
 
@@ -1248,6 +1263,14 @@ void key_pin_init(void)
 	GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_6|GPIO_Pin_7|GPIO_Pin_8|GPIO_Pin_9|GPIO_Pin_12;
 	GPIO_Init(KEY_PORT3, &GPIOD_InitStructure);	
 
+
+	GPIOD_InitStructure.GPIO_Pin = GPIO_Pin_4;
+    GPIOD_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
+    GPIOD_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOC, &GPIOD_InitStructure);	
+
+	GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_RESET);
+	
 	key_2_pin_init();
 	ec11_key_zoom_pin_init();
 	ec11_key_focus_pin_init();
@@ -1298,6 +1321,9 @@ u32 key_merge(void)
 
 u8 long_key_state = 0;
 
+#define		KEY_DELAY_CHECK_MS		40
+
+
 //返回0为无按键，返回非0值，则为对应的按键号
 static u32 key_ctl_check(void)
 {
@@ -1310,7 +1336,7 @@ static u32 key_ctl_check(void)
 	{
 		if(((key_tmp>>i)&0x0001)==0)
 		{
-			rt_thread_delay(100);
+			rt_thread_delay(KEY_DELAY_CHECK_MS);
 
 			key_tmp = key_merge();
 
@@ -1500,6 +1526,7 @@ u16 num_to_baudrate(u8 numb)
 }
 
 
+extern int flash_program_my(void);
 
 void key_analyze(u16 val)
 {
@@ -1519,11 +1546,25 @@ void key_analyze(u16 val)
 			{
 				iris_motor_mode = 0;
 			
-			
+				flash_program_my();
+				
 				osd_line3_disp(1);
 				osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
 				rs485_get_data_from_slave();
 
+
+			}
+
+			switch(key_num_val)
+				{
+			case 80:
+			case 81:
+			case 82:
+			case 83:
+				cam_filter_mode = key_num_val-80;
+				break;
+			default:
+				break;
 			}
 
 		}
@@ -1546,6 +1587,7 @@ void key_analyze(u16 val)
 				else if(key_num_val==130)
 						iris_motor_mode = 2;
 
+				flash_program_my();
 				
 				osd_line3_disp(1);
 				osd_opt_message_disp(16+iris_mode,OSD_MSG_DISP_MAX_SECOND);
@@ -1784,13 +1826,16 @@ void key_analyze(u16 val)
 				{
 				case 0:
 					pelcod_call_pre_packet_send(125);
+					flash_program_my();
 					break;
 				case 1:
 					pelcod_set_pre_packet_send(125);
+					flash_program_my();
 
 					break;
 				case 2:
 					pelcod_set_pre_packet_send(130);
+					flash_program_my();
 
 					break;
 				default:
@@ -1929,7 +1974,7 @@ u8 key_sw22_check(void)
 	
 	if(GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3) == 0)
 	{
-		rt_thread_delay(10);
+		rt_thread_delay(KEY_DELAY_CHECK_MS);
 
 			if(GPIO_ReadInputDataBit(GPIOB, GPIO_Pin_3) == 0)
 			{
@@ -1982,6 +2027,12 @@ void rt_key_thread_entry(void* parameter)
 		k = key_detect();
 		if(k)
 		{
+
+			GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_SET);
+
+			rt_thread_delay(BEEP_DELAY);
+			GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_RESET);
+
 			key_handle(k);
 
 			//osd_line3_disp(1);
@@ -2000,6 +2051,12 @@ void rt_key_thread_entry(void* parameter)
 		k = key_sw22_check();
 		if(k==1)
 		{
+		
+		GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_SET);
+		
+		rt_thread_delay(BEEP_DELAY);
+		GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_RESET);
+
 			pelcod_open_close_packet_send(0);
 			memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 			strcat(osd_mid_str_buff,joystick_msg[9]);
@@ -2007,6 +2064,10 @@ void rt_key_thread_entry(void* parameter)
 		}
 		else if(k==0x10)
 		{
+			GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_SET);
+
+			rt_thread_delay(BEEP_DELAY);
+			GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_RESET);
 
 			pelcod_stop_packet_send();
 			memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
@@ -2247,6 +2308,12 @@ void rt_ec11_focus_thread_entry(void* parameter)
 		{
 			if(key_press_state_tmp)
 			{
+			
+			GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_SET);
+
+			rt_thread_delay(BEEP_DELAY);
+			GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_RESET);
+
 				pelcod_zf_packet_send(PD_ZOOM_FOCUS_STOP,0);
 				
 				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
@@ -2268,6 +2335,12 @@ void rt_ec11_focus_thread_entry(void* parameter)
 				
 				result = BMQCounterTotal_focus;
 				BMQCounterTotal_focus = 0;
+
+				GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_SET);
+				
+				rt_thread_delay(BEEP_DELAY);
+				GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_RESET);
+
 
 				if(result > 0)
 				{
@@ -2314,7 +2387,14 @@ void rt_ec11_focus_thread_entry(void* parameter)
 				s32 result;
 				
 				result = BMQCounterTotal_focus;
+
+
 				
+				GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_SET);
+				
+				rt_thread_delay(BEEP_DELAY);
+				GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_RESET);
+
 				if(result > 0)
 				{	pelcod_zf_packet_send(PD_FOCUS_FAR_CMD,abs(result));
 
@@ -2463,6 +2543,8 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 		k = key2_zoom_press_check();
 		if(k)
 		{
+		
+
 			if(key_press_state_tmp)
 			{
 				pelcod_zf_packet_send(PD_ZOOM_FOCUS_STOP,0);
@@ -2532,6 +2614,10 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 				
 				result = BMQCounterTotal_zoom;
 				
+				GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_SET);
+				
+				rt_thread_delay(BEEP_DELAY);
+				GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_RESET);
 
 				if(result > 0)
 				{
@@ -2692,6 +2778,8 @@ void rt_ec11_thread_entry(void* parameter)
 		k = key2_press_check();
 		if(k)
 		{
+		
+
 			if(key_press_state_tmp)
 			{
 				//pelcod_stop_packet_send();
@@ -2761,6 +2849,14 @@ void rt_ec11_thread_entry(void* parameter)
 				s32 result;
 				
 				result = BMQCounterTotal;
+
+
+				GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_SET);
+				
+				rt_thread_delay(BEEP_DELAY);
+				GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_RESET);
+
+
 
 				if(result > 0)
 				{
@@ -2953,12 +3049,17 @@ u8 rs485_get_data_from_slave_thread_entry(void* parameter)
 
 }
 
+
+
 int rt_key_ctl_init(void)
 {
 
 	
     rt_thread_t init_thread;
 
+
+
+		
 	key_pin_init();
 	joystick_pin_init();
 	
