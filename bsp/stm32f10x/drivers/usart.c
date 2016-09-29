@@ -361,10 +361,10 @@ static void GPIO_Configuration(void)
   	GPIO_Init(GPIOB, &GPIO_InitStructure);
 
 	/*设置RS485为接收模式*/
-	//GPIO_ResetBits(RS485_RX_TX_CTL_PORT,RS485_RX_TX_CTL_PIN);
+	GPIO_ResetBits(RS485_RX_TX_CTL_PORT,RS485_RX_TX_CTL_PIN);
 
 	/*设置RS485为发送模式*/
- 	GPIO_SetBits(RS485_RX_TX_CTL_PORT,RS485_RX_TX_CTL_PIN);
+ 	//GPIO_SetBits(RS485_RX_TX_CTL_PORT,RS485_RX_TX_CTL_PIN);
 
 
 #endif /* RT_USING_UART1 */

@@ -302,20 +302,15 @@ int rt_application_init(void)
 	
     init_thread = rt_thread_create("mY",
                                    rt_main_thread_entry, RT_NULL,
-                                   1024, 6, 5);
+                                   512, 6, 5);
     if (init_thread != RT_NULL)
         rt_thread_startup(init_thread);
 
 
-#if (RT_THREAD_PRIORITY_MAX == 32)
     init_thread = rt_thread_create("init",
                                    rt_init_thread_entry, RT_NULL,
-                                   2048, 8, 20);
-#else
-    init_thread = rt_thread_create("init",
-                                   rt_init_thread_entry, RT_NULL,
-                                   2048, 80, 20);
-#endif
+                                   512, 8, 20);
+
 
     if (init_thread != RT_NULL)
         rt_thread_startup(init_thread);

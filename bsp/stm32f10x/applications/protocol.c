@@ -31,15 +31,15 @@ u8 complex_cmd=0;
 
 
 
-static u8 Rocket_fir_data_pre=0;
+//static u8 Rocket_fir_data_pre=0;
 
 void PELCO_D_P_protocol_analysis_2(void)
 {
 //	uchar KCPCom , k;
 	uchar parity_byte;
 	uchar Keyboard_data_com;
-	uchar Pan_falg = 0;
-	uchar Tilt_falg = 0;
+//	uchar Pan_falg = 0;
+//	uchar Tilt_falg = 0;
 //	static uchar Rec_tour_data_flag;          // 为1时开始接收TOUR数,为2时数据已接收完毕
 
 	Keyboard_data_com = 0x00;
@@ -328,21 +328,21 @@ void ReturnPanTiltPos(u8 InquiryStepType)
 
 void return_cmd_to_camlink(u8 cmd,u8 para)
 {
-	uchar return_com2[15];//return_com2[9];//	数据返回：P-P协议，返回的数据少一位。
+//	uchar return_com2[15];//return_com2[9];//	数据返回：P-P协议，返回的数据少一位。
 
-	return_com2[0] = CAMERA_LINK_CMD_HEAD;
-	return_com2[1] = 0xb2;
-    
-	return_com2[2] = cmd;
-	return_com2[3] = para;
+//	return_com2[0] = CAMERA_LINK_CMD_HEAD;
+//	return_com2[1] = 0xb2;
+//    
+//	return_com2[2] = cmd;
+//	return_com2[3] = para;
 
-	return_com2[4] = 0;
-	return_com2[5] = 0;
-	return_com2[6] = 0;
-	return_com2[7] = CAMERA_LINK_CMD_TAIL;
+//	return_com2[4] = 0;
+//	return_com2[5] = 0;
+//	return_com2[6] = 0;
+//	return_com2[7] = CAMERA_LINK_CMD_TAIL;
 
-	//RS485_SendBytes(8,return_com2);
- 	delayms(40);
+//	//RS485_SendBytes(8,return_com2);
+// 	delayms(40);
    
 }
 
