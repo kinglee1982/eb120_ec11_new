@@ -60,7 +60,7 @@ extern u8 iris_motor_mode;
 extern u8 rs485_get_data_from_slave(void);
 void key_value_all_clear(void);
 
-u8 beep_enable = 0;//0,off; 1,on
+u8 beep_enable = 1;//0,off; 1,on
 
 u8 cam_para_mode=0;
 
@@ -1742,6 +1742,8 @@ void key_analyze(u16 val)
 				beep_enable = 0;
 				else
 					beep_enable=1;
+
+				flash_program_my();
 			}
 
 			
@@ -2046,7 +2048,7 @@ void rt_key_thread_entry(void* parameter)
 		if(k)
 		{
 			if(k<0x8000)
-//				rt_sem_release(&key_sem);	
+				rt_sem_release(&key_sem);	
 			
 			rt_mb_send(&key_mb, (rt_uint32_t)k);
 
@@ -2171,7 +2173,7 @@ const u8* focus_msg[]=
 
 
 
-#define	OSD_DISP_DELAY		200
+#define	OSD_DISP_DELAY		300
 
 
 
@@ -2183,7 +2185,8 @@ void rt_ec11_focus_thread_entry(void* parameter)
 //	s32 ec11_counter_pre = 0,ec11_counter_bak = 0;
 
 	static u8 key_press_state_tmp = 0;
-	
+	s32 result;
+
 	while(1)
 	{
 		k = key2_focus_press_check();
@@ -2210,7 +2213,6 @@ void rt_ec11_focus_thread_entry(void* parameter)
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
-				s32 result;
 				
 				result = BMQCounterTotal_focus;
 				BMQCounterTotal_focus = 0;
@@ -2260,12 +2262,13 @@ void rt_ec11_focus_thread_entry(void* parameter)
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
-				s32 result;
-				
+
+				if(result != BMQCounterTotal_focus)
+					rt_sem_release(&key_sem);	//beep
 				result = BMQCounterTotal_focus;
+				//BMQCounterTotal_focus = 0;
 
-
-				rt_sem_release(&key_sem);	//beep
+				
 				
 
 				if(result > 0)
@@ -2317,6 +2320,7 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 //	s32 ec11_counter_pre = 0,ec11_counter_bak = 0;
 
 	static u8 key_press_state_tmp = 0;
+	s32 result;
 	
 	while(1)
 	{
@@ -2346,11 +2350,15 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
-				s32 result;
+				
 				
 				result = BMQCounterTotal_zoom;
 				BMQCounterTotal_zoom = 0;
 
+				
+				if(result != 0)
+				rt_sem_release(&key_sem);	//beep
+				
 				if(result > 0)
 				{
 					pelcod_zf_packet_send(1,abs(result));
@@ -2392,11 +2400,10 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
-				s32 result;
-				
+				if(result != BMQCounterTotal_zoom)
+					rt_sem_release(&key_sem);	//beep
+
 				result = BMQCounterTotal_zoom;
-				
-				rt_sem_release(&key_sem);	//beep
 
 				if(result > 0)
 				{
@@ -2454,6 +2461,7 @@ void rt_ec11_thread_entry(void* parameter)
 
 	static u8 key_press_state_tmp = 0;
 
+	s32 result;
 
     while(1)
 	{
@@ -2481,29 +2489,36 @@ void rt_ec11_thread_entry(void* parameter)
 //				ec11_counter_pre = BMQCounterTotal;
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
-
-				s32 result;
 				
+								
 				result = BMQCounterTotal;
 				BMQCounterTotal = 0;
 
+
+				if(result!=0)
+					rt_sem_release(&key_sem);	//beep;
+					
 				if(result > 0)
 				{
-					pelcod_open_close_packet_send_exptend(0,abs(result)&(~0x80),0x80);
 
 					
 					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,iris_msg[1]);
 					osd_line1_disp(0);
-					}
+
+					pelcod_open_close_packet_send_exptend(0,abs(result)&(~0x80),0x80);
+
+				}
 				else if(result < 0)
 				{
-					pelcod_open_close_packet_send_exptend(1,abs(result)&(~0x80),0x80);
 
 					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,iris_msg[2]);
 					osd_line1_disp(0);
-					}
+
+					pelcod_open_close_packet_send_exptend(1,abs(result)&(~0x80),0x80);
+
+				}
 
 				rt_thread_delay(OSD_DISP_DELAY);
 				//pelcod_stop_packet_send();
@@ -2528,24 +2543,30 @@ void rt_ec11_thread_entry(void* parameter)
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
 				s32 result;
-				
+
+
+				if(result != BMQCounterTotal)
+					rt_sem_release(&key_sem);	//beep
+
 				result = BMQCounterTotal;
 
-				rt_sem_release(&key_sem);	//beep
+							
 
 				if(result > 0)
 				{
-					pelcod_open_close_packet_send_exptend(0,abs(result)&(~0x80),0x80);
 					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,iris_msg[1]);
 					osd_line1_disp(0);
-					}
+					pelcod_open_close_packet_send_exptend(0,abs(result)&(~0x80),0x80);
+
+
+				}
 				else if(result < 0)
 				{
-					pelcod_open_close_packet_send_exptend(1,abs(result)&(~0x80),0x80);
 					memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 					strcat(osd_mid_str_buff,iris_msg[2]);
 					osd_line1_disp(0);
+					pelcod_open_close_packet_send_exptend(1,abs(result)&(~0x80),0x80);
 
 				}
 
@@ -2617,7 +2638,7 @@ void rt_beep_thread_entry(void* parameter)
 			GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_SET);
 			rt_thread_delay(BEEP_DELAY);
 			GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_RESET);
-			rt_thread_delay(500);
+			//rt_thread_delay(300);
 		}
 		else
 		{
@@ -2669,7 +2690,7 @@ void rt_joystick_check_thread_entry(void* parameter)
 		k = Get_joystick_Value();
 		if(k)
 		{
-//			rt_sem_release(&key_sem);	//beep
+			rt_sem_release(&key_sem);	//beep
 			rt_mb_send(joystick_mb, (rt_uint32_t)k);	
 		}
 		

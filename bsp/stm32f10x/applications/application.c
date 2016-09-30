@@ -260,6 +260,7 @@ rt_mutex_t oled_disp_mut = RT_NULL;
 
 
 extern u8 iris_motor_mode;
+extern u8 beep_enable;
 
 void rt_main_thread_entry(void* parameter)
 {
@@ -272,6 +273,9 @@ void rt_main_thread_entry(void* parameter)
 	if((flash_my_data&0xffff0000) == 0x12340000)
 	{
 		iris_motor_mode = flash_my_data&0x000000ff;
+		myflashadd = (u32 *)(BANK1_WRITE_START_ADDR+4);
+		beep_enable = (u8)*(myflashadd);
+
 	}
 	
 

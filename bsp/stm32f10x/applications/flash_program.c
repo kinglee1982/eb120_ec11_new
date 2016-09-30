@@ -65,6 +65,7 @@ volatile TestStatus MemoryProgramStatus = PASSED;
   */
 
 extern u8 iris_motor_mode;
+extern u8 beep_enable;
 
 int flash_program_my(void)
 {
@@ -101,7 +102,7 @@ int flash_program_my(void)
 
 	FLASHStatus = FLASH_ProgramWord(Address, (u32)data);
 
-  
+  FLASHStatus = FLASH_ProgramWord(Address+4, (u32)beep_enable);
   
 
 }
