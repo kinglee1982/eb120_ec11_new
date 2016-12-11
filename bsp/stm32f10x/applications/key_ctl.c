@@ -1021,12 +1021,6 @@ static void joystick_handle(void)
 	{
 
 	
-	GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_SET);
-	
-	rt_thread_delay(BEEP_DELAY);
-	GPIO_WriteBit(GPIOC,GPIO_Pin_4, Bit_RESET);
-
-
 		prestate = 0;
 		pelcod_lrud_pre_packet_send(lrudcmd2,lrspeed, udspeed);
 
@@ -1921,7 +1915,12 @@ void key_handle(u16 val)
 					//osd_clear_x_y(OSD_VAL_START_ADDR_X,4*8,OSD_VAL_START_ADDR_Y,16);
 					OLED_Clear_line(0,OSD_VAL_START_ADDR_Y,8);
 					OLED_Clear_line(0,OSD_VAL_START_ADDR_Y+1,8);
-					return;
+
+					key_val_buffer_cnt = 0;
+					if(key_val_buffer_cnt == 1)
+						key_num_val = key_num_val*10 + tmp;
+					
+					//return;
 				}
 			}
 			else
@@ -1936,6 +1935,8 @@ void key_handle(u16 val)
 
 		}
 
+
+LABEL_KHANDLE:
 		if(key_val_buffer_cnt > 4 )
 		{
 			key_value_all_clear();
@@ -2194,7 +2195,7 @@ void rt_ec11_focus_thread_entry(void* parameter)
 		{
 			if(key_press_state_tmp)
 			{
-				rt_sem_release(&key_sem);	//beep
+				//rt_sem_release(&key_sem);	//beep
 				
 				pelcod_zf_packet_send(PD_ZOOM_FOCUS_STOP,0);
 				
@@ -2217,7 +2218,8 @@ void rt_ec11_focus_thread_entry(void* parameter)
 				result = BMQCounterTotal_focus;
 				BMQCounterTotal_focus = 0;
 
-				rt_sem_release(&key_sem);	//beep
+
+			//	rt_sem_release(&key_sem);	//beep
 
 
 				if(result > 0)
@@ -2262,9 +2264,11 @@ void rt_ec11_focus_thread_entry(void* parameter)
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
-
+#if 0
 				if(result != BMQCounterTotal_focus)
 					rt_sem_release(&key_sem);	//beep
+#endif
+
 				result = BMQCounterTotal_focus;
 				//BMQCounterTotal_focus = 0;
 
@@ -2331,7 +2335,7 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 
 			if(key_press_state_tmp)
 			{
-				rt_sem_release(&key_sem);	//beep
+				//rt_sem_release(&key_sem);	//beep
 				
 				pelcod_zf_packet_send(PD_ZOOM_FOCUS_STOP,0);
 				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
@@ -2355,9 +2359,10 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 				result = BMQCounterTotal_zoom;
 				BMQCounterTotal_zoom = 0;
 
-				
+#if 0				
 				if(result != 0)
 				rt_sem_release(&key_sem);	//beep
+#endif
 				
 				if(result > 0)
 				{
@@ -2400,8 +2405,10 @@ void rt_ec11_zoom_thread_entry(void* parameter)
 				
 				rt_thread_delay(PD_CMD_DELAY_MS);
 
+#if 0
 				if(result != BMQCounterTotal_zoom)
 					rt_sem_release(&key_sem);	//beep
+#endif
 
 				result = BMQCounterTotal_zoom;
 
@@ -2471,7 +2478,7 @@ void rt_ec11_thread_entry(void* parameter)
 
 			if(key_press_state_tmp)
 			{
-				rt_sem_release(&key_sem);	//beep;
+			//	rt_sem_release(&key_sem);	//beep;
 				
 				memset(osd_mid_str_buff,0,sizeof(osd_mid_str_buff));
 				strcat(osd_mid_str_buff,iris_msg[0]);
@@ -2494,9 +2501,10 @@ void rt_ec11_thread_entry(void* parameter)
 				result = BMQCounterTotal;
 				BMQCounterTotal = 0;
 
-
+#if 0
 				if(result!=0)
 					rt_sem_release(&key_sem);	//beep;
+#endif
 					
 				if(result > 0)
 				{
@@ -2544,9 +2552,10 @@ void rt_ec11_thread_entry(void* parameter)
 
 				s32 result;
 
-
+#if 0
 				if(result != BMQCounterTotal)
 					rt_sem_release(&key_sem);	//beep
+#endif
 
 				result = BMQCounterTotal;
 
@@ -2690,7 +2699,6 @@ void rt_joystick_check_thread_entry(void* parameter)
 		k = Get_joystick_Value();
 		if(k)
 		{
-			rt_sem_release(&key_sem);	//beep
 			rt_mb_send(joystick_mb, (rt_uint32_t)k);	
 		}
 		
@@ -2710,6 +2718,8 @@ void rt_joystick_handle_thread_entry(void* parameter)
 	{
 		if (rt_mb_recv(joystick_mb, (rt_uint32_t*)&k, RT_WAITING_FOREVER) == RT_EOK)
 		{
+			rt_sem_release(&key_sem);	//beep
+
 			if(k)
 			{
 				key_handle(k);
@@ -2989,7 +2999,7 @@ int rt_key_ctl_init(void)
 
     init_thread = rt_thread_create("beep",
                                    rt_beep_thread_entry, RT_NULL,
-                                   300, 5, 5);
+                                   400, 6, 5);
     if (init_thread != RT_NULL)
         rt_thread_startup(init_thread);
 
@@ -3002,26 +3012,26 @@ int rt_key_ctl_init(void)
 
     init_thread = rt_thread_create("joy_handle",
                                    rt_joystick_handle_thread_entry, RT_NULL,
-                                   512, 5, 5);
+                                   800, 5, 5);
     if (init_thread != RT_NULL)
         rt_thread_startup(init_thread);
 
     init_thread = rt_thread_create("joy_check",
                                    rt_joystick_check_thread_entry, RT_NULL,
-                                   400, 5, 5);
+                                   500, 5, 5);
     if (init_thread != RT_NULL)
         rt_thread_startup(init_thread);
 #endif
 
     init_thread = rt_thread_create("sw22_check",
                                    rt_key_sw22_check_thread_entry, RT_NULL,
-                                   256, 5, 5);
+                                   500, 5, 5);
     if (init_thread != RT_NULL)
         rt_thread_startup(init_thread);
 
     init_thread = rt_thread_create("sw22_han",
                                    rt_key_sw22_handle_thread_entry, RT_NULL,
-                                   256, 5, 5);
+                                   500, 5, 5);
     if (init_thread != RT_NULL)
         rt_thread_startup(init_thread);
 
